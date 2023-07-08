@@ -1,6 +1,18 @@
 [![CI for specs](https://github.com/WebAssembly/spec/actions/workflows/ci-spec.yml/badge.svg)](https://github.com/WebAssembly/spec/actions/workflows/ci-spec.yml)
 [![CI for interpreter & tests](https://github.com/WebAssembly/spec/actions/workflows/ci-interpreter.yml/badge.svg)](https://github.com/WebAssembly/spec/actions/workflows/ci-interpreter.yml)
 
+# [DRAFT] Thread Spawning Proposal
+
+This repository proposes a new WebAssembly instruction for spawning threads. It is a fork of the
+[spec] repository for easier merging later. It is based on the [threads] proposal as a baseline,
+though those spec changes are not yet included here. Read the [overview] for details.
+
+[spec]: https://github.com/WebAssembly/spec
+[threads]: https://github.com/WebAssembly/threads
+[overview]: proposals/thread-spawn/Overview.md
+
+Original `README` from upstream repository follows...
+
 # spec
 
 This repository holds the sources for the WebAssembly draft specification

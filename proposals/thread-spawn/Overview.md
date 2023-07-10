@@ -61,7 +61,7 @@ The lessons learned over the past years plus the interest in the ecosystem sugge
 for this proposal is _now_, but you may consider this motivation insufficient. Feel free to discuss
 further here: [Is this proposal necessary?][necessity-discussion].
 
-[necessity-discussion]: TODO
+[necessity-discussion]: https://github.com/abrown/thread-spawn/discussions/1
 
 
 ## Goals
@@ -114,9 +114,9 @@ we waiting too long for tasks to fill the batch? But, on the other hand, includi
 (a) we can always spawn a single thread with `n = 1` and (b) knowing `n` supposes no engine overhead
 (quite the opposite: knowing a large amount of parallel computation is coming could help the engine
 with thread scheduling). "WebAssembly on GPUs" and engine scheduling optimization may not be
-convincing for some; we can discuss this further in: [Should we `spawn n`?][spawn_n-discussion]
+convincing for some; we can discuss this further in: [Should we `spawn n`?][spawn-n-discussion]
 
-[spawn_n-discussion]: TODO
+[spawn-n-discussion]: https://github.com/abrown/thread-spawn/discussions/2
 
 #### Type constraints
 
@@ -135,9 +135,9 @@ The motivation for passing a single `c` parameter to the parallel function is du
 
 [thread joining]: #what-about-thread-joining
 
-To discuss this more: [What should `spawn`'s type be?][type-discussion].
+To discuss this more: [What should the spawned function's type be?][type-discussion].
 
-[type-discussion]: TODO
+[type-discussion]: https://github.com/abrown/thread-spawn/discussions/3
 
 ### `shared` attributes
 
@@ -162,7 +162,7 @@ During validation, we ensure that any targets of `thread.spawn` are `shared` fun
 output or read from a file? This bears more discussion: [How can we have `shared`
 imports?][import-discussion].
 
-[import-discussion]: TODO
+[import-discussion]: https://github.com/abrown/thread-spawn/discussions/4
 
 __TODO__: chart what happens for interactions between non-shared, shared, and embedding contexts;
 e.g., if from the host we call a non-`shared` export, does it have exclusive access to the main
@@ -176,7 +176,7 @@ approach (for the toolchain) is to simply mark all module objects as `shared` if
 ever used. For more discussion: [How should toolchains apply
 `shared`?][toolchain-shared-discussion].
 
-[toolchain-shared-discussion]: TODO
+[toolchain-shared-discussion]: https://github.com/abrown/thread-spawn/discussions/5
 
 ### `thread.hw_concurrency`
 
@@ -200,11 +200,12 @@ fingerprinting. Note that:
 2. this kind of fingerprinting is likely possible without the instruction via some careful timing of
    shared access from concurrently-executing threads
 
-This issue can be discussed further here: [Should we include `thread.hw_concurrency`?][hw_concurrency-discussion].
+This issue can be discussed further here: [Should we include
+`thread.hw_concurrency`?][hw-concurrency-discussion].
 
 [`hardwareConcurrency`]: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/hardwareConcurrency
 [widely available]: https://caniuse.com/?search=hardwareConcurrency
-[hw_concurrency-discussion]: TODO
+[hw-concurrency-discussion]: https://github.com/abrown/thread-spawn/discussions/6
 
 
 
@@ -241,7 +242,6 @@ global, e.g.: upon starting execution, each thread atomically reads and incremen
 the value as its key to its subset of the data. Other mechanisms of this kind are possible.
 
 ### What about thread joining?
-<a name="thread-joining"></a>
 
 This proposal does not include a language-level mechanism for "joining" a thread (e.g.,
 `pthread_join`). As shown with [wasi-threads] in [wasi-libc][wasi-libc-pthread-join], this can be

@@ -249,6 +249,32 @@ implemented via the existing `wait` and `notify` instructions.
 
 [wasi-libc-pthread-join]: https://github.com/WebAssembly/wasi-libc/blob/bd950eb128bff337153de217b11270f948d04bb4/libc-top-half/musl/src/thread/pthread_join.c
 
+### What about exiting a thread?
+
+There are a couple of sides to this; recall that that "thread" here means a function invoked via
+`thread.spawn`:
+
+1. If a thread is __finished__ (e.g., `return`), it simply ends. There is no caller to return to and
+   the signature requirements (see [Type constraints]) mean no value need be returned. If any thread
+   cleanup work must be done, it must be added by the toolchain in a trampoline function (as
+   wasi-libc [does]) or inserted directly into the spawned function.
+2. If a thread __traps__, all threads abort execution. This falls inline with the current spec:
+   "traps cannot be handled by WebAssembly code." The time it takes to abort all other threads may
+   be non-deterministic, but one would expect engines to do this as quickly as possible and for
+   users to never rely on any "abort gap after trap" behavior.
+3. If a thread must __early exit__, there are several options. The approach currently taken here is
+   to rely on the [exception handling] proposal, currently at phase 3: e.g., `pthread_exit` could be
+   implemented via `throw` with a corresponding `catch` in a thread-wrapping trampoline. Another
+   option would be to add another instruction to the proposal: `thread.exit`. There is a related
+   discussion about this issue in [wasi-threads#7] and if you have an opinion please discuss: [How
+   should threads early-exit?][thread-exit-discussion]
+
+[does]: https://github.com/WebAssembly/wasi-libc/blob/bd950eb128bff337153de217b11270f948d04bb4/libc-top-half/musl/src/thread/pthread_create.c#L307
+[Type constraints]: #type-constraints
+[exception handling]: https://github.com/WebAssembly/exception-handling
+[wasi-threads#7]: https://github.com/WebAssembly/wasi-threads/issues/7
+[thread-exit-discussion]: https://github.com/abrown/thread-spawn/discussions/7
+
 ### What changes are necessary in the JavaScript API?
 
 See the TC39 [structs] proposal

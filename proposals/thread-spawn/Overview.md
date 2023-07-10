@@ -149,8 +149,8 @@ paper for the sequential consistency guarantees). Following the paper, this prop
 
 - `shared` tables will be grown and modified atomically
 - `shared` globals will be modified atomically
-- `shared` functions can only call other `shared` functions; any non-`shared` objects are
-  thread-local
+- `shared` functions can never access non-`shared` objects; e.g., they only call other `shared`
+  functions and only access `shared` memory
 
 __TODO__: add a WAT example
 
@@ -213,12 +213,16 @@ This issue can be discussed further here: [Should we include
 
 ### What about thread-local storage (TLS)?
 
-`shared` attributes partition the module's objects into two sets: `shared` and thread-local. Each
-object (table, memory, global) that is not shared is initialized with its default values (e.g., a
-memory has `data` entries) and any changes are only visible to the thread itself. These non-`shared`
-objects can be used for thread-local storage. Alternately, one could use a specific section of
-shared memory for TLS, as [wasi-libc][wasi-libc-tls] currently does for C's auxiliary stack.
+`shared` attributes prevent `shared` functions from accessing any non-`shared` objects. This means
+that TLS must be implemented by indexing a thread (see [TIDs]) into something `shared`, e.g., a
+`shared` memory.
 
+One might imagine splitting up tables or sets of globals for TLS, but `shared` memories is likely
+more straightforward. For example, when compiling C/C++ to WebAssembly, address-taken local
+variables are placed on an auxiliary stack in linear memory. For wasi-threads support, wasi-libc was
+already modified [to understand][wasi-libc-tls] how to manage thread-local versions of this stack.
+
+[TIDs]: #what-about-thread-ids-tids
 [wasi-libc-tls]: https://github.com/WebAssembly/wasi-libc/blob/bd950eb128bff337153de217b11270f948d04bb4/libc-top-half/musl/src/thread/pthread_create.c#L456
 
 __TODO__: how is this different than a new instance?
@@ -251,7 +255,7 @@ implemented via the existing `wait` and `notify` instructions.
 
 ### What about exiting a thread?
 
-There are a couple of sides to this; recall that that "thread" here means a function invoked via
+There are a couple of sides to this; recall that "thread" here means a function invoked via
 `thread.spawn`:
 
 1. If a thread is __finished__ (e.g., `return`), it simply ends. There is no caller to return to and

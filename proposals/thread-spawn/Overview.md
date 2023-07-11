@@ -150,7 +150,7 @@ paper for the sequential consistency guarantees). Following the paper, this prop
 - `shared` tables will be grown and modified atomically
 - `shared` globals will be modified atomically
 - `shared` functions can never access non-`shared` objects; e.g., they only call other `shared`
-  functions and only access `shared` memory
+  functions and only access `shared` memories, tables, and globals
 
 __TODO__: add a WAT example
 
@@ -217,7 +217,7 @@ This issue can be discussed further here: [Should we include
 that TLS must be implemented by indexing a thread (see [TIDs]) into something `shared`, e.g., a
 `shared` memory.
 
-One might imagine splitting up tables or sets of globals for TLS, but `shared` memories is likely
+One might imagine splitting up tables or sets of globals for TLS, but `shared` memories are likely
 more straightforward. For example, when compiling C/C++ to WebAssembly, address-taken local
 variables are placed on an auxiliary stack in linear memory. For wasi-threads support, wasi-libc was
 already modified [to understand][wasi-libc-tls] how to manage thread-local versions of this stack.

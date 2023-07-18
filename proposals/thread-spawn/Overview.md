@@ -50,12 +50,12 @@ proposal needed? The key reasons:
   concurrent WebAssembly (i.e., a single mechanism to target vs. what we have today)
 - threads implemented using Web Workers or [wasi-threads] create a __new instance per thread__
   &mdash; this is difficult (impossible?) to reconcile with the [component model]
-- thread spawning using Web Workers is __quite slow__ (~1000x slower than OS threads &dash;
-  [benchmarks]); a WebAssembly `thread.spawn` instruction could improve performance
+- thread spawning using Web Workers is __quite slow__ (2-3 orders of magnitude slower than OS
+  threads &dash; [benchmarks]); a WebAssembly `thread.spawn` instruction could improve performance
 
 [component model]: https://github.com/WebAssembly/component-model
 [emscripten-pthreads]: https://emscripten.org/docs/porting/pthreads.html
-[benchmarks]: TODO
+[benchmarks]: https://github.com/abrown/bench-thread-spawn
 
 The lessons learned over the past years plus the interest in the ecosystem suggests that the time
 for this proposal is _now_, but you may consider this motivation insufficient. Feel free to discuss
@@ -224,8 +224,6 @@ already modified [to understand][wasi-libc-tls] how to manage thread-local versi
 
 [TIDs]: #what-about-thread-ids-tids
 [wasi-libc-tls]: https://github.com/WebAssembly/wasi-libc/blob/bd950eb128bff337153de217b11270f948d04bb4/libc-top-half/musl/src/thread/pthread_create.c#L456
-
-__TODO__: how is this different than a new instance?
 
 ### What about thread IDs (TIDs)?
 

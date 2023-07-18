@@ -215,7 +215,10 @@ This issue can be discussed further here: [Should we include
 
 `shared` attributes prevent `shared` functions from accessing any non-`shared` objects. This means
 that TLS must be implemented by indexing a thread (see [TIDs]) into something `shared`, e.g., a
-`shared` memory.
+`shared` memory. But how to do this could be problematic, see: [Do we need more for
+TLS?][tls-discussion].
+
+[tls-discussion]: https://github.com/abrown/thread-spawn/discussions/12
 
 One might imagine splitting up tables or sets of globals for TLS, but `shared` memories are likely
 more straightforward. For example, when compiling C/C++ to WebAssembly, address-taken local

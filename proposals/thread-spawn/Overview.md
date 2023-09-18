@@ -1,11 +1,13 @@
 # [DRAFT] Thread Spawn Proposal
 
 This page describes a proposal to allow WebAssembly modules to spawn threads from within the
-WebAssembly language. This is done with three additions to the specification:
+WebAssembly language. This is done with several additions to the specification (each addition is
+annotated with its criticality to the proposal; next-stage discussions could alter this list):
 
-- a new `thread.spawn` instruction
-- new `shared` attributes on WebAssembly tables, functions, and globals
-- a new `thread.hw_concurrency` instruction
+- __required__: new `shared` attributes on WebAssembly tables, functions, and globals
+- __required in some form__: a new `thread.spawn` instruction (other mechanisms are possible; more
+  discussion needed)
+- __helpful__: a new `thread.hw_concurrency` instruction
 
 Though conceptually simple, this idea has not yet been formally proposed due to several challenges,
 not the least of which is the perceived complexity of implementing all of this safely. Please be

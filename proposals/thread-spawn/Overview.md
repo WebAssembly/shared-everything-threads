@@ -157,16 +157,24 @@ __TODO__: add a WAT example
 #### Engine requirements
 
 During validation, we ensure that any targets of `thread.spawn` are `shared` functions and that all
-`shared` functions do not call non-`shared` functions. This can be problematic: all host imports
-(e.g., WASI, Web APIs) are currently imported as non-`shared` functions. How will a thread print
-output or read from a file? This bears more discussion: [How can we have `shared`
-imports?][import-discussion].
+`shared` functions do not call non-`shared` functions. This partitions the WebAssembly objects into
+non-shared and `shared` groups. The following table outlines how one group accesses the other (e.g.,
+how a non-shared function accesses a `shared` memory):
+
+| From       | Can access? | To         | Notes |
+|------------|-------------|------------|-------|
+| non-shared |     ✅     | non-shared | This would continue to work as it does today: functions calling other functions, accessing tables, globals, and memory, etc. |
+| non-shared |     ✅     | `shared`   | This would also continue to work as it does today: e.g., functions can access `shared` memory. |
+| `shared`   |     ❌     | non-shared | This is not possible, by validation. |
+| `shared`   |     ✅     | `shared`   | This is how we expect threads to access state: only `shared` state. |
+
+What about the code that embeds a WebAssembly engine &mdash; which group do this fall into?
+Initially, this proposal assumes that all host code is non-shared. But this can be problematic: all
+host imports (e.g., WASI, Web APIs) are currently imported as non-`shared` functions. How will a
+thread print output or read from a file? The following discussion has some ideas that we expect to
+prototype; feel free to share more: [How can we have `shared` imports?][import-discussion].
 
 [import-discussion]: https://github.com/abrown/thread-spawn/discussions/4
-
-__TODO__: chart what happens for interactions between non-shared, shared, and embedding contexts;
-e.g., if from the host we call a non-`shared` export, does it have exclusive access to the main
-thread's objects? What happens if we call `thread.spawn` here?
 
 #### Toolchain requirements
 

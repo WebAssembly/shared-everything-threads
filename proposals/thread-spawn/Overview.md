@@ -152,7 +152,24 @@ paper for the sequential consistency guarantees). Following the paper, this prop
 - `shared` functions can never access non-`shared` objects; e.g., they only call other `shared`
   functions and only access `shared` memories, tables, and globals
 
-__TODO__: add a WAT example
+```wat
+(module
+  (memory 1 1)
+
+  ;; $foo can access this particular linear memory because neither it or the memory are shared.
+  (func $foo
+    i32.load (i32.const 0)
+    drop)
+
+  ;; $bar cannot access the un-shared memory, but it can call the shared import $baz.
+  (func $bar shared
+    call $baz)
+  (func $baz (import "" "foo") shared)
+
+  (func $start (export "run")
+    ;; We can only spawn threads from shared functions of the right type:
+    thread.spawn $bar (i32.const 1)))
+```
 
 #### Engine requirements
 

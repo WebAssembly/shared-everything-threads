@@ -86,7 +86,7 @@ The proposed mechanism for spawning threads in WebAssembly is a new `thread.spaw
 |---------------|---------------------------------------------------------------------------------------------------------------------------------|
 | Syntax        | `thread.spawn funcidx`                                                                                                          |
 | Validation    | Valid with type `[i32, t*] -> []` when the function referred to has type `[t*] -> []` and is `shared`                           |
-| Execution     | With function index `f` and stack values [`n`, `p*`], enqueue `n` "parallel" invocations of `f` passing `p*`; immediately return |
+| Execution     | With function index `f` and stack values [`n`, `v*`], enqueue `n` "parallel" invocations of `f` passing `v*`; immediately return |
 | Binary format | `0xFE 0x04 f:funcidx => thread.spawn f`                                                                                         |
 
 [Binary format]: https://webassembly.github.io/spec/core/bikeshed/#instructions%E2%91%A6
@@ -99,7 +99,7 @@ that:
   thread)
 - it creates multiple invocations &mdash; the `n` invocations mean that "all these invocations
   _could_ start concurrently"
-- it invokes a function `f(p*)` that returns no values
+- it invokes a function `f(v*)` that returns no values
 
 #### Multiple invocations
 
@@ -119,14 +119,14 @@ convincing for some; we can discuss this further in: [Should we `spawn n`?][spaw
 
 #### Type constraints
 
-The function `f` to be spawned can expect zero or more arguments (`p*`) but returns no values.
+The function `f` to be spawned can expect zero or more arguments (`v*`) but returns no values.
 
 - _no return values_: by preventing return values, this design can avoid adding a "thread" handle
   abstraction (no need, see [thread joining]). Thus there is no place to return these values to;
   they cannot be returned to the caller as execution has already progressed past the `thread.spawn`
   instruction.
 
-- _any arguments_ : the input parameters `p*` can be of any WebAssembly type. One might wonder: why
+- _any arguments_ : the input parameters `v*` can be of any WebAssembly type. One might wonder: why
   allow more than one argument if a toolchain generating WebAssembly can create a closure in linear
   memory, allowing us to pass a single address as is done with `pthread_create`? Generality: the
   [discussion][type-discussion] for this issue brought up that not all toolchains may be able to do

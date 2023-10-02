@@ -7,6 +7,9 @@ annotated with its criticality to the proposal; next-stage discussions could alt
 - __required__: new `shared` attributes on WebAssembly tables, functions, and globals
 - __required in some form__: a new `thread.spawn` instruction (other mechanisms are possible; more
   discussion needed)
+- __required in some form__: a mechanism enabling thread-local storage (e.g., a new `thread.id`
+  instruction)
+- __strongly desired__: a design for JavaScript-WebAssembly interaction
 - __helpful__: a new `thread.hw_concurrency` instruction
 
 Though conceptually simple, this idea has not yet been formally proposed due to several challenges,

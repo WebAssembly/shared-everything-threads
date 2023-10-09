@@ -90,8 +90,8 @@ The proposed mechanism for spawning threads in WebAssembly is a new `thread.spaw
 | Section       | Proposed change (rough)                                                                                                         |
 |---------------|---------------------------------------------------------------------------------------------------------------------------------|
 | Syntax        | `thread.spawn funcidx`                                                                                                          |
-| Validation    | Valid with type `[i32, i32] -> []`; also, the function referred to must have type `[i32] -> []` and be `shared`                 |
-| Execution     | With function index `f` and stack values `n` and `c`, enqueue `n` "parallel" invocations of `f` passing `c`; immediately return |
+| Validation    | Valid with type `[i32, t*] -> []` when the function referred to has type `[t*] -> []` and is `shared`                           |
+| Execution     | With function index `f` and stack values [`n`, `v*`], enqueue `n` "parallel" invocations of `f` passing `v*`; immediately return |
 | Binary format | `0xFE 0x04 f:funcidx => thread.spawn f`                                                                                         |
 
 [Binary format]: https://webassembly.github.io/spec/core/bikeshed/#instructions%E2%91%A6
@@ -104,8 +104,7 @@ that:
   thread)
 - it creates multiple invocations &mdash; the `n` invocations mean that "all these invocations
   _could_ start concurrently"
-- it invokes a very limited function type &mdash; `c` represents a context passed to the function,
-  perhaps an address pointing at more data.
+- it invokes a function `f(v*)` that returns no values
 
 #### Multiple invocations
 
@@ -125,23 +124,25 @@ convincing for some; we can discuss this further in: [Should we `spawn n`?][spaw
 
 #### Type constraints
 
-The motivation for passing a single `c` parameter to the parallel function is due to:
+The function `f` to be spawned can expect zero or more arguments (`v*`) but returns no values.
 
-1. _convention_: some spawn mechanisms (e.g., `pthread_create`) pass a single parameter to the
-   created thread; to pass multiple parameters in this model, one places them in memory and passes
-   the address of a structure from which to retrieve them. [wasi-threads] shares this convention and
-   it has not yet been problematic.
-2. _already restricted_: the invoked function must already have a restricted type &mdash; it cannot
-   return any values. Because this design has no concept of a "thread" handle (no need, see [thread
-   joining]), there is no place to return these values to; they cannot be returned to the caller as
-   execution has already progressed past the `thread.spawn` instruction.
-2. _simplicity_: implementation-wise, if engines map `thread.spawn` to OS threads, they may be able
-   to do less wrapping and unwrapping if `f` expects a single parameter (as do OS threads).
+- _no return values_: by preventing return values, this design can avoid adding a "thread" handle
+  abstraction (no need, see [thread joining]). Thus there is no place to return these values to;
+  they cannot be returned to the caller as execution has already progressed past the `thread.spawn`
+  instruction.
 
-[thread joining]: #what-about-thread-joining
+- _any arguments_ : the input parameters `v*` can be of any WebAssembly type. One might wonder: why
+  allow more than one argument if a toolchain generating WebAssembly can create a closure in linear
+  memory, allowing us to pass a single address as is done with `pthread_create`? Generality: the
+  [discussion][type-discussion] for this issue brought up that not all toolchains may be able to do
+  this, so the more general solution is to keep the passed arguments separate from WebAssembly's
+  observable global state. As is the case with `call`, etc., the engine will be responsible for
+  creating any necessary closure state to pass to implementations that use single-argument thread
+  APIs (e.g., `pthread_create`).
 
 To discuss this more: [What should the spawned function's type be?][type-discussion].
 
+[thread joining]: #what-about-thread-joining
 [type-discussion]: https://github.com/abrown/thread-spawn/discussions/3
 
 ### `shared` attributes

@@ -1,15 +1,16 @@
 [![CI for specs](https://github.com/WebAssembly/spec/actions/workflows/ci-spec.yml/badge.svg)](https://github.com/WebAssembly/spec/actions/workflows/ci-spec.yml)
 [![CI for interpreter & tests](https://github.com/WebAssembly/spec/actions/workflows/ci-interpreter.yml/badge.svg)](https://github.com/WebAssembly/spec/actions/workflows/ci-interpreter.yml)
 
-# [DRAFT] Thread Spawning Proposal
+# [DRAFT] Shared-Everything Threads Proposal
 
-This repository proposes a new WebAssembly instruction for spawning threads. It is a fork of the
-[spec] repository for easier merging later. It is based on the [threads] proposal as a baseline,
+This repository proposes additions to the WebAssembly specification for spawning and managing
+threads &mdash; everything not covered by the already-approved [threads] proposal. It is a fork of
+the [spec] repository for easier merging later. It is based on the [threads] proposal as a baseline,
 though those spec changes are not yet included here. Read the [overview] for details.
 
 [spec]: https://github.com/WebAssembly/spec
 [threads]: https://github.com/WebAssembly/threads
-[overview]: proposals/thread-spawn/Overview.md
+[overview]: proposals/shared-everything-threads/Overview.md
 
 Original `README` from upstream repository follows...
 

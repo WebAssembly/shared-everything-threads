@@ -1,4 +1,7 @@
-# [DRAFT] Thread Spawn Proposal
+# [DRAFT] Shared-Everything Threads Proposal
+
+> __WARNING__: this page is under active development as we merge in various ideas discussed while
+> reaching phase 1 approval &mdash; expect significant changes soon!
 
 This page describes a proposal to allow WebAssembly modules to spawn threads from within the
 WebAssembly language. This is done with several additions to the specification (each addition is

@@ -48,7 +48,7 @@ documents, recommendations, and case studies.
 
 ### Software
 
-The Subgroup may produce software related to garbage collection in Wasm
+The Subgroup may produce software related to threading in Wasm
 (either as standalone libraries, tooling, or integration of interface-related functionality in existing threading software).
 These may include
 

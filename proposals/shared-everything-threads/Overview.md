@@ -57,7 +57,7 @@ We expect the following changes to enable something like the following example (
 ```wat
 (module
   (type $unshared (func))
-  (type $shared (func shared)) 
+  (type $shared (func shared))
 
   ;; An imported shared function.
   (func $baz (import "env" "baz") (type $shared))
@@ -67,7 +67,7 @@ We expect the following changes to enable something like the following example (
   ;; $foo can access memory $m because neither $foo nor $m are shared.
   (func $foo (type $unshared)
     i32.const 0
-    i32.load $m 
+    i32.load $m
     drop
   )
 
@@ -303,7 +303,7 @@ This instruction behaves just like `memory.atomic.notify`: The first operand is 
 
 To improve performance for linear memory languages using threading (e.g. C, C++, and Rust) and to make it feasible to compile languages targeting WasmGC that have stronger memory models (e.g. Java and OCaml), we introduce [release-acquire][release-acquire] ordering as an intermediate memory order that is stronger than unordered accesses and weaker than the sequentially-consistent memory order used by all existing WebAssembly atomics. As described [below][new-instructions], the choice of memory order can be encoded in a `memarg`, so all existing atomic instructions that take a `memarg` immediate will be able to be used with release-acquire ordering. For other atomic instructions, new encodings will be introduced to provide release-acquire variants.
 
-Implementations must take care to ensure that uninitialized data in shared tables, globals, structs, arrays, and any other location cannot be observed, even by other threads. This requires something like a release barrier between when a new allocation is initialized and when its address is made available to the program. 
+Implementations must take care to ensure that uninitialized data in shared tables, globals, structs, arrays, and any other location cannot be observed, even by other threads. This requires something like a release barrier between when a new allocation is initialized and when its address is made available to the program.
 
 [release-acquire]: https://en.cppreference.com/w/cpp/atomic/memory_order#Release-Acquire_ordering
 
@@ -382,8 +382,8 @@ The new Instructions below do not have memarg immediates because they do not ope
 #### Types
 
 The shared annotation occupies the same bit location as it does for memory types. In the threads proposal, the `limits` flag byte on memories is extended such that if bit 1 (the second bit) is set, the memory is `shared`. Likewise:
-tables are `shared`if the `limit` flag byte has bit 1 set
-globals are `shared` if the `mut` flag byte has bit 1 set
+- tables are `shared` if the `limit` flag byte has bit 1 set
+- globals are `shared` if the `mut` flag byte has bit 1 set
 
 | type | opcode |
 | ---- | ------ |

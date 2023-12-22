@@ -573,7 +573,7 @@ ordering. For memargs on non-atomic operations, the bits are not interpreted and
 scheme allows encoding alignments of up to 32768 bytes using bits 0-3, so there is no danger that we
 will need the newly reserved bits for alignment in the future, especially for atomic accesses.
 
-The new Instructions below do not have memarg immediates because they do not operate on memories.
+The new instructions below do not have memarg immediates because they do not operate on memories.
 They instead have `u32:ordering` immediates, which are 0 for sequentially-consistent ordering or 1
 for release-acquire ordering. `atomic.fence` already has a reserved zero byte immediate, which we
 now interpret as a u32:ordering immediate, allowing us to express release-acquire fences as well.

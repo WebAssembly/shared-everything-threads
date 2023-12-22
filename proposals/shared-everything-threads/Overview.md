@@ -387,19 +387,19 @@ globals are `shared` if the `mut` flag byte has bit 1 set
 
 | type | opcode |
 | ---- | ------ |
-| func shared [valtype*] -> [valtype*] | 0x5d (-35 as s7) |
-| struct shared fieldtype* | 0x5c (-36 as s7) |
-| array shared fieldtype | 0x5b (-37 as s7) |
-| (shared nofunc) | 0x5A |
-| (shared noextern) | 0x59 |
-| (shared none) | 0x58 |
-| (shared func) | 0x57 |
-| (shared extern) | 0x56 |
-| (shared any) | 0x55 |
-| (shared eq) | 0x54 |
-| (shared i31) | 0x53 |
-| (shared struct) | 0x52 |
-| (shared array) | 0x51 |
+| `func shared [valtype*] -> [valtype*]` | 0x5d (-35 as s7) |
+| `struct shared fieldtype*` | 0x5c (-36 as s7) |
+| `array shared fieldtype` | 0x5b (-37 as s7) |
+| `(shared nofunc)` | 0x5A |
+| `(shared noextern)` | 0x59 |
+| `(shared none)` | 0x58 |
+| `(shared func)` | 0x57 |
+| `(shared extern)` | 0x56 |
+| `(shared any)` | 0x55 |
+| `(shared eq)` | 0x54 |
+| `(shared i31)` | 0x53 |
+| `(shared struct)` | 0x52 |
+| `(shared array)` | 0x51 |
 
 #### Instructions
 

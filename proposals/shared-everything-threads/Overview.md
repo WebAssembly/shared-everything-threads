@@ -608,46 +608,42 @@ the memory is `shared`. Likewise:
 | ------------ | ------ | ----- |
 | `global.atomic.get <u32:ordering> <globalidx>` | 0xFE 0x4F | |
 | `global.atomic.set <u32:ordering> <globalidx>` | 0xFE 0x50 | |
-| `global.atomic.rmw.add <u32:ordering> <globalidx>` | 0xFE 0x51 | valid for i32, i64 and i31 reference globals. |
-| `global.atomic.rmw.sub <u32:ordering> <globalidx>` | 0xFE 0x52 | valid for i32, i64 and i31 reference globals. |
-| `global.atomic.rmw.and <u32:ordering> <globalidx>` | 0xFE 0x53 | valid for i32, i64 and i31 reference globals. |
-| `global.atomic.rmw.or <u32:ordering> <globalidx>` | 0xFE 0x54 | valid for i32, i64 and i31 reference globals. |
-| `global.atomic.rmw.xor <u32:ordering> <globalidx>` | 0xFE 0x55 | valid for i32, i64 and i31 reference globals. |
+| `global.atomic.rmw.add <u32:ordering> <globalidx>` | 0xFE 0x51 | valid for i32 and i64 reference globals. |
+| `global.atomic.rmw.sub <u32:ordering> <globalidx>` | 0xFE 0x52 | valid for i32 and i64 reference globals. |
+| `global.atomic.rmw.and <u32:ordering> <globalidx>` | 0xFE 0x53 | valid for i32 and i64 reference globals. |
+| `global.atomic.rmw.or <u32:ordering> <globalidx>` | 0xFE 0x54 | valid for i32 and i64 reference globals. |
+| `global.atomic.rmw.xor <u32:ordering> <globalidx>` | 0xFE 0x55 | valid for i32 and i64 reference globals. |
 | `global.atomic.rmw.xchg <u32:ordering> <globalidx>` | 0xFE 0x56 | |
 | `global.atomic.rmw.cmpxchg <u32:ordering> <globalidx>` | 0xFE 0x57 | valid for i32, i64, and eqref globals. |
 | `table.atomic.get <u32:ordering> <tableidx>` | 0xFE 0x58 | valid for anyref tables. |
 | `table.atomic.set <u32:ordering> <tableidx>` | 0xFE 0x59 | valid for anyref tables. |
-| `table.atomic.rmw.add <u32:ordering> <tableidx>` | 0xFE 0x5A | valid for i31 reference tables. |
-| `table.atomic.rmw.sub <u32:ordering> <tableidx>` | 0xFE 0x5B | valid for i31 reference tables. |
-| `table.atomic.rmw.and <u32:ordering> <tableidx>` | 0xFE 0x5C | valid for i31 reference tables. |
-| `table.atomic.rmw.or <u32:ordering> <tableidx>` | 0xFE 0x5D | valid for i31 reference tables. |
-| `table.atomic.rmw.xor <u32:ordering> <tableidx>` | 0xFE 0x5E | valid for i31 reference tables. |
-| `table.atomic.rmw.xchg <u32:ordering> <tableidx>` | 0xFE 0x5F | valid for anyref tables. |
-| `table.atomic.rmw.cmpxchg <u32:ordering> <tableidx>` | 0xFE 0x60 | valid for eqref tables. |
-| `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x61| valid for i32, i64, and anyref fields. |
-| `struct.atomic.get_s <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i8 and i16 fields. |
-| `struct.atomic.get_u <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x63 | valid for i8 and i16 fields. |
-| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x64 | valid for i32, i64, and anyref fields. |
-| `struct.atomic.rmw.add <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x65 | valid for i32, i64 and i31 reference fields. |
-| `struct.atomic.rmw.sub <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x66 | valid for i32, i64 and i31 reference fields. |
-| `struct.atomic.rmw.and <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x67 | valid for i32, i64 and i31 reference fields. |
-| `struct.atomic.rmw.or <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x68 | valid for i32, i64 and i31 reference fields. |
-| `struct.atomic.rmw.xor <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x69 | valid for i32, i64 and i31 reference fields. |
-| `struct.atomic.rmw.xchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x6A|
-| `struct.atomic.rmw.cmpxchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x6B | valid for i32, i64, and eqref fields. |
-| `array.atomic.get <u32:ordering> <typeidx>` | 0xFE 0x6C | |
-| `array.atomic.get_s <u32:ordering> <typeidx>` | 0xFE 0x6D | valid for i8 and i16 arrays. |
-| `array.atomic.get_u <u32:ordering> <typeidx>` | 0xFE 0x6E | valid for i8 and i16 arrays. |
-| `array.atomic.set <u32:ordering> <typeidx>` | 0xFE 0x6F | |
-| `array.atomic.rmw.add <u32:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64 and i31 reference arrays. |
-| `array.atomic.rmw.sub <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64 and i31 reference arrays. |
-| `array.atomic.rmw.and <u32:ordering> <typeidx>` | 0xFE 0x72 | valid for i32, i64 and i31 reference arrays. |
-| `array.atomic.rmw.or <u32:ordering> <typeidx>` | 0xFE 0x73 | valid for i32, i64 and i31 reference arrays. |
-| `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x74 | valid for i32, i64 and i31 reference arrays. |
-| `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x75 |
-| `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x76 | valid for i32, i64, and eqref arrays. |
 
-> TODO: Should we allow atomic arithmetic on i8 and i16 fields?
+| `table.atomic.rmw.xchg <u32:ordering> <tableidx>` | 0xFE 0x5A | valid for anyref tables. |
+| `table.atomic.rmw.cmpxchg <u32:ordering> <tableidx>` | 0xFE 0x5B | valid for eqref tables. |
+| `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5C | valid for i32, i64, and anyref fields. |
+| `struct.atomic.get_s <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5D | valid for i8 and i16 fields. |
+| `struct.atomic.get_u <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5E | valid for i8 and i16 fields. |
+| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5F | valid for i32, i64, and anyref fields. |
+| `struct.atomic.rmw.add <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x60 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.sub <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x61 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.and <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.or <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x63 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.xor <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x64 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.xchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x65 | |
+| `struct.atomic.rmw.cmpxchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x66 | valid for i32, i64, and eqref fields. |
+| `array.atomic.get <u32:ordering> <typeidx>` | 0xFE 0x67 | |
+| `array.atomic.get_s <u32:ordering> <typeidx>` | 0xFE 0x68 | valid for i8 and i16 arrays. |
+| `array.atomic.get_u <u32:ordering> <typeidx>` | 0xFE 0x69 | valid for i8 and i16 arrays. |
+| `array.atomic.set <u32:ordering> <typeidx>` | 0xFE 0x6A | |
+| `array.atomic.rmw.add <u32:ordering> <typeidx>` | 0xFE 0x6B | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.sub <u32:ordering> <typeidx>` | 0xFE 0x6C | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.and <u32:ordering> <typeidx>` | 0xFE 0x6D | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.or <u32:ordering> <typeidx>` | 0xFE 0x6E | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | |
+| `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and eqref arrays. |
+
+> TODO: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref fields and table slots?
 
 ## Other Considerations (FAQ)
 

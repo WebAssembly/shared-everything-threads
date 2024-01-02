@@ -627,7 +627,7 @@ the memory is `shared`. Likewise:
 | `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x61| valid for i32, i64, and anyref fields. |
 | `struct.atomic.get_s <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i8 and i16 fields. |
 | `struct.atomic.get_u <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x63 | valid for i8 and i16 fields. |
-| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx> | 0xFE 0x64 | valid for i32, i64, and anyref fields. |
+| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x64 | valid for i32, i64, and anyref fields. |
 | `struct.atomic.rmw.add <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x65 | valid for i32, i64 and i31 reference fields. |
 | `struct.atomic.rmw.sub <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x66 | valid for i32, i64 and i31 reference fields. |
 | `struct.atomic.rmw.and <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x67 | valid for i32, i64 and i31 reference fields. |

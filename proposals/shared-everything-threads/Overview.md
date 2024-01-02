@@ -617,7 +617,6 @@ the memory is `shared`. Likewise:
 | `global.atomic.rmw.cmpxchg <u32:ordering> <globalidx>` | 0xFE 0x57 | valid for i32, i64, and eqref globals. |
 | `table.atomic.get <u32:ordering> <tableidx>` | 0xFE 0x58 | valid for anyref tables. |
 | `table.atomic.set <u32:ordering> <tableidx>` | 0xFE 0x59 | valid for anyref tables. |
-
 | `table.atomic.rmw.xchg <u32:ordering> <tableidx>` | 0xFE 0x5A | valid for anyref tables. |
 | `table.atomic.rmw.cmpxchg <u32:ordering> <tableidx>` | 0xFE 0x5B | valid for eqref tables. |
 | `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5C | valid for i32, i64, and anyref fields. |

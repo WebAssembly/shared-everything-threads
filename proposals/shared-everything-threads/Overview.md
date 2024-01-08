@@ -396,7 +396,7 @@ struct accessors as well as the new atomic struct accessors. This field is the f
 that is atomically checked when waiting on the waiter queue. `waitqueue` is also always shared.
 There is no non-shared version of it. It is not valid to declare a new subtype of `waitqueue`.
 
-To wait on and notify a particular `waitqueueref, there are two additional instructions:
+To wait on and notify a particular `waitqueueref`, there are two additional instructions:
 
  - `waitqueue.wait: [waitqueueref, i32, i64] -> [i32]`
 

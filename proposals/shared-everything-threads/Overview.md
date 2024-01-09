@@ -559,7 +559,9 @@ entire thread or agent.
 > instead, which would allow the functions to be re-bound on each realm. This would be consistent
 > with the way many things work on the Web, but would be less consistent with how shared memory
 > multithreading works in Wasm today, where functions are bound (i.e. imported) once per thread, not
-> once per realm.
+> once per realm. Note that the prototypes on shared objects in the JS API, including function
+> wrappers, will be realm-local regardless of what context we choose for thread-local globals and
+> function wrappers
 
 [jspi]: https://github.com/WebAssembly/js-promise-integration
 [realm]: https://tc39.es/ecma262/#realm

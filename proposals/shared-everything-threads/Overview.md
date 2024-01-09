@@ -276,7 +276,7 @@ The syntax of `globaltype` is extended again:
 
 ```
 globalshare = share | 'thread_local'
-globaltype = mut globalshare valtype
+globaltype = globalshare mut valtype
 ```
 
 Thread-local globals are valid if their valtypes are valid as shared.
@@ -407,6 +407,9 @@ meaning it is a struct with one visible `i32` field that can be accessed with al
 struct accessors as well as the new atomic struct accessors. This field is the futex control field
 that is atomically checked when waiting on the waiter queue. `waitqueue` is also always shared.
 There is no non-shared version of it. It is not valid to declare a new subtype of `waitqueue`.
+
+> Note: Should we have a non-shared version of `waitqueue` just for orthogonality? The type would be
+> useless, but orthogonality would be helpful for optimizers.
 
 To wait on and notify a particular `waitqueueref`, there are two additional instructions:
 
@@ -614,6 +617,10 @@ the memory is `shared`. Likewise:
 | `(shared struct)` | 0x52 |
 | `(shared array)` | 0x51 |
 
+> TODO: Refactor these to use a "shared" prefix opcode to take up less of the opcode space.
+
+> TODO: We also need a binary format for shared module item types.
+
 #### Instructions
 
 | Instructions | opcode | notes |
@@ -654,7 +661,8 @@ the memory is `shared`. Likewise:
 | `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | |
 | `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and eqref arrays. |
 
-> TODO: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref fields and table slots?
+> TODO: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref
+> fields and table slots?
 
 ## Other Considerations (FAQ)
 

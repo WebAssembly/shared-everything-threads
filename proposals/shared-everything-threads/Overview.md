@@ -121,7 +121,7 @@ Shared memories have already been standardized.
 The syntax of `tabletype` is extended:
 
 ```
-tabletype ::= limits share reftype
+tabletype ::= share limits reftype
 ```
 
 A `tabletype` is valid as shared only if its `reftype` is valid as shared.
@@ -140,7 +140,7 @@ unshared tables.
 The syntax of `globaltype` is extended:
 
 ```
-globaltype ::= mut share valtype
+globaltype ::= share mut valtype
 ```
 
 A `globaltype` is valid as shared only if its `valtype` is valid as shared.
@@ -164,7 +164,7 @@ To capture sharedness for imported and exported functions, as well as to facilit
 of instructions as shared, the structure of `functype` is extended:
 
 ```
-functype ::= resulttype -> resulttype share
+functype ::= share resulttype -> resulttype
 ```
 
 > Note: If this validation turns out to be too strict to be usable, we may relax the validation of
@@ -175,16 +175,20 @@ functype ::= resulttype -> resulttype share
 
 #### Heap Types
 
-The syntax of `absheaptype` is extended:
+The syntax of `absheaptype` (abstract type) is extended to make `shareabsheaptype`, which will be
+used everywhere `absheaptype` is used today. This extension allows for e.g. `(shared any)` and
+`(shared func)` to be used in place of `any` and `func`.
 
 ```
-absheaptype ::= share func | share nofunc | share extern | share noextern | share any | share eq | share i31 | share struct | share array | share none
+shareabsheaptype ::= share absheaptype
 ```
 
-The syntax of `comptype` is extended:
+Similarly, the syntax of `comptype` (composite type) is extended to make `sharecomptype`, which will
+be used everywhere `comptype` is used today. This allows for declaring e.g. `(func shared ...` or
+`(struct shared ...` types.
 
 ```
-comptype ::= func share functype | struct share structtype | array share arraytype
+sharecomptype ::= share comptype
 ```
 
 The validation judgments for all kinds of types are parameterized by `share`. In general, the
@@ -192,9 +196,10 @@ conclusions are `ok(shared)` iff the premises are `ok(shared)`. The validation r
 `absheaptype` and `comptype` are extended so that they are only `ok(shared)` if the heap type is
 shared. Number types and vector types are always valid as shared.
 
-Similarly, we need to be able to validate that a `typeidx` is valid as shared. We introduce an
-auxiliary function `expandshare` similar to `expand` that returns `shared` or `unshared` for a given
-deftype. A `typeidx` `x` is `ok(shared)` iff `expandshare(C.types[x]) = shared`.
+Similarly, we need to be able to validate that a `typeidx` is valid as shared. To achieve this we
+can update the auxiliary function `expand` to return a `sharecomptype` instead of a `comptype` for a
+type index and pattern match on the results. A `typeidx` `x` being `ok(shared)` requires
+`expand(C.types[x]) = shared comptype`.
 
 Shared and unshared types are never subtypes of one another. The subtype relationships among shared
 abstract types mirrors the subtype relationships among unshared abstract types.
@@ -205,22 +210,29 @@ abstract types mirrors the subtype relationships among unshared abstract types.
 
 #### Element Segments
 
-The syntax of `elem` is extended:
+The syntax of `elem` is extended to refer to a new `elemtype` that says whether or not an element
+segment is shared.
 
 ```
-elem ::= {type reftype, init vec(expr), mode elemmode, share}
+elemtype ::= share reftype
+elem ::= {type elemtype, init vec(expr), mode elemmode}
 ```
 
 An element segment is valid as shared only if its reftype is valid as shared. Instructions that
 refer to element segments (e.g. `elem.drop`) are only valid as shared if their element segment is
 shared.
 
+> Note: We could alternatively make an element segment shared iff its elements refer to shared data.
+> It's unclear whether there is a use case for a non-shared element segment containing shared data.
+
 #### Data Segments
 
-The syntax of data segments is extended:
+The syntax of data segments is extended to refer to a new `datatype` that says whether or not a data
+segment is shared:
 
 ```
-data ::= {init vec(byte), mode datamode, share}
+datatype ::= share
+data ::= {type datatype, init vec(byte), mode datamode}
 ```
 
 Instructions that refer to data segments (e.g. `data.drop`) are only valid as shared if their data

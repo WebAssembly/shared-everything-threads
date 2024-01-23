@@ -239,8 +239,10 @@ data ::= {type datatype, init vec(byte), mode datamode}
 Instructions that refer to data segments (e.g. `data.drop`) are only valid as shared if their data
 segment is shared.
 
-> Note: we could alternatively make all data segments shared, just like we do for other
-> non-reference data.
+> Note: We could alternatively make all data segments shared, just like we do for other
+> non-reference data. This would require allocating all data segments in a shared heap, though,
+> which may have performance or memory use implications. We should evaluate whether there is a
+> reason to support non-shared data segments once we have prototype implementations.
 
 #### Exception tags
 

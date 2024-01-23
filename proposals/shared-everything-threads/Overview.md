@@ -222,8 +222,9 @@ An element segment is valid as shared only if its reftype is valid as shared. In
 refer to element segments (e.g. `elem.drop`) are only valid as shared if their element segment is
 shared.
 
-> Note: We could alternatively make an element segment shared iff its elements refer to shared data.
-> It's unclear whether there is a use case for a non-shared element segment containing shared data.
+> Note: We could alternatively make an element segment shared iff its elements refer to shared data,
+> however, we have chosen to add an explicit annotation to avoid future complications if we ever
+> want to add first-class references to element segments.
 
 #### Data Segments
 
@@ -238,8 +239,10 @@ data ::= {type datatype, init vec(byte), mode datamode}
 Instructions that refer to data segments (e.g. `data.drop`) are only valid as shared if their data
 segment is shared.
 
-> Note: we could alternatively make all data segments shared, just like we do for other
-> non-reference data.
+> Note: We could alternatively make all data segments shared, just like we do for other
+> non-reference data. This would require allocating all data segments in a shared heap, though,
+> which may have performance or memory use implications. We should evaluate whether there is a
+> reason to support non-shared data segments once we have prototype implementations.
 
 #### Exception tags
 
@@ -263,8 +266,7 @@ After discussing the options (see the [“Do we need more from TLS?”][tls-disc
 this proposal gained a mechanism for TLS. This proposal chooses the `thread_local` annotation as its
 preferred solution; other options are discussed [here][tls-discussion] and in a [Google document].
 
-> Note: In a Web context, it may make sense for "thread-local globals" to actually be realm-local,
-> so the spec should decouple threads of execution from execution contexts. See the related
+> Note: In a Web context, "thread-local globals" could alternatively be realm-local. See the related
 > discussion in the JS API section below.
 
 [tls-discussion]: https://github.com/WebAssembly/shared-everything-threads/discussions/12
@@ -279,11 +281,19 @@ globalshare = share | 'thread_local'
 globaltype = globalshare mut valtype
 ```
 
-Thread-local globals are valid if their valtypes are valid as shared.
+Thread-local globals are valid only if their valtypes are valid as shared. Their types must also be
+defaultable. Declared (i.e. non-imported) thread-local globals must be initialized to the default
+value for their types.
 
 > Note: We don't allow non-shared references in thread-local globals because then they would not be
 > able to be accessed from shared functions. We could always relax this restriction, especially if
 > we relax the restrictions on intermediate values in shared functions.
+
+> Note: The restricted initializers are a conservative starting point that minimizes the work the
+> engine must do to initialize the thread-local storage. If useful, we could relax this to allow any
+> constant instructions in thread-local initializers, or perhaps only non-allocating constant
+> instructions. If we allow allocations, we can choose whether they happen once or separately on
+> each thread.
 
 #### Execution
 
@@ -292,17 +302,6 @@ thread-local globals access only the value for that global for the current threa
 to access a thread's thread-local global value directly from any other thread.
 
 Thread-local globals can be imported and exported just like normal or shared globals.
-
-Declared (i.e. non-imported) thread-local globals have constant initializers just like any other
-global. The constant initializer is executed separately on each thread, so if, for instance, the
-initializer is a `struct.new` instruction, there will be a separate struct allocated for each
-thread.
-
-> Note: To initialize a thread-local global to refer to the same struct on each thread instead, the
-> initializer expression can be a `global.get` of a shared global.
-
-> Note: Since thread-local globals will tend to be initialized more frequently than normal globals,
-> it may make sense to further restrict their initializers, for example by prohibiting allocations.
 
 #### Implementation
 
@@ -497,7 +496,7 @@ wrappers around the underlying shared buffers), the new shared tables, globals, 
 will be shared JS objects that do not require rewrapping. Such shared objects have fixed layout and
 behave mostly like [sealed] JS objects, and their identities survive round trips via postMessage
 across thread boundaries. Additionally, to facilitate calling methods on these shared objects, they
-have [realm-local prototypes][tls-prototypes].
+have [realm-local prototypes][tls-prototypes] just like shared structs are proposed to have in JS.
 
 The shared versions of the JS API types (besides memories) will be represented with new
 constructors:
@@ -516,7 +515,7 @@ While the behaviors chosen here mirror those proposed in the JS shared structs p
 implementation of this behavior does not require any changes in the JS specification because this
 proposal does not propose any user-programmable means in JS to create new kinds of shared objects.
 
-We also expose realm-local globals with a `realm-local` option in the `WebAssembly.SharedGlobal`
+We also expose thread-local globals with a `thread-local` option in the `WebAssembly.SharedGlobal`
 constructor.
 
 > Note: It would also be possible to reuse the existing constructors and add a `shared` property for
@@ -526,38 +525,45 @@ constructor.
 [sealed]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal
 [tls-prototypes]: https://github.com/tc39/proposal-structs/blob/main/ATTACHING-BEHAVIOR.md
 
-#### Realm-Local JS Function Wrappers
+#### Thread-Local JS Function Wrappers
 
 One of the most important requirements for this proposal is that there be some way for shared
 functions to call JS functions, which are inherently unshared. Without this capability, shared
 functions would not be able to directly interact with their environment on the Web. To allow shared
 functions to call unshared JS functions, we extend the `WebAssembly.SharedFunction` constructor with
-a new `realm-local: bool` option.
+a new `thread-local: bool` option.
 
-On the web, JavaScript always executes in a particular [realm]. An agent (roughly, a thread of
-execution) may have multiple active realms within it, such as in the case of multiple iframes. Each
-agent that executes JS has at least one realm, but may have more. Importantly, each realm has its
-own copy of all JS built-ins and web APIs. For example, a main document's `Array` constructor is a
-different function than an iframe's `Array` constructor.
-
-When `realm-local` is true, the resulting `WebAssembly.SharedFunction` is a "realm-local function
-wrapper." It behaves like a realm-local global initialized to `ref.null nofunc` on each realm, so if
-it is called immediately after being shared with another realm, it will behave as though calling
-`null`.  `WebAssembly.SharedFunction` has a `set` method that sets the wrapped function on the
+When `thread-local` is true, the resulting `WebAssembly.SharedFunction` is a "thread-local function
+wrapper." It behaves like a thread-local global initialized to `ref.null nofunc` on each thread, so
+if it is called immediately after being shared with another thread, it will behave as though calling
+`null`. `WebAssembly.SharedFunction` has a `set` method that sets the wrapped function on the
 current realm, and it throws an error if the current realm's wrapped function has already been set
-to a non-null value. The `WebAssembly.SharedFunction` constructor with the `realm-local` option
+to a non-null value. The `WebAssembly.SharedFunction` constructor with the `thread-local` option
 supplied implicitly calls `set`, so it cannot be called again on that original thread (unless the
 function was constructed wrapping `null` in the first place).
 
-The `realm-local` option composes with the `async` option from JSPI. A shared function wrapper that
+The `thread-local` option composes with the `async` option from JSPI. A shared function wrapper that
 is also async is async on every realm and thread.
 
-As an engine-internal optimization, setting a realm-local global to a realm-local function wrapper
+As an engine-internal optimization, setting a thread-local global to a thread-local function wrapper
 can skip a layer of indirection and set the global to refer directly to the bound function, since it
-will never change or be observed from another realm. This optimization only works if Wasm
-"thread-local" globals are actually realm-local in the Web embedding. True thread-local globals can
-be emulated on top of realm-local globals by ensuring that all realms on a thread trampoline through
-functions from a single realm to enter WebAssembly.
+will never change or be observed from another thread. This optimization only works because the
+dynamic contexts of thread-local globals and thread-local function wrappers are the same, i.e. an
+entire thread or agent.
+
+> Note: On the web, JavaScript always executes in a particular [realm]. An agent (roughly, a thread
+> of execution) may have multiple active realms within it, such as in the case of multiple iframes.
+> Each agent that executes JS has at least one realm, but may have more. Importantly, each realm has
+> its own copy of all JS built-ins and web APIs. For example, a main document's `Array` constructor
+> is a different function than an iframe's `Array` constructor.
+>
+> It would be possible for thread-local globals and function wrappers to actually be realm-local
+> instead, which would allow the functions to be re-bound on each realm. This would be consistent
+> with the way many things work on the Web, but would be less consistent with how shared memory
+> multithreading works in Wasm today, where functions are bound (i.e. imported) once per thread, not
+> once per realm. Note that the prototypes on shared objects in the JS API, including function
+> wrappers, will be realm-local regardless of what context we choose for thread-local globals and
+> function wrappers
 
 [jspi]: https://github.com/WebAssembly/js-promise-integration
 [realm]: https://tc39.es/ecma262/#realm

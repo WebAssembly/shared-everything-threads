@@ -401,22 +401,21 @@ primitive that does not depend on linear memory. We propose adding a new abstrac
 `waitqueue` to serve as this new primitive.
 
 Unlike other abstract heap types, which are only ever subtypes of other abstract heap types (or are
-bottom types), `waitqueue` is a final subtype of `(rec (type (sub (struct shared (field (mut (ref
-null (shared eq)))))))).0`, meaning it is a struct with one visible shared eqref field that can be
-accessed with all the standard struct accessors as well as the new atomic struct accessors. This
-field is the futex control field that is atomically checked when waiting on the waiter queue.
-`waitqueue` is also always shared. There is no non-shared version of it. It is not valid to declare
-a new subtype of `waitqueue`.
+bottom types), `waitqueue` is a final subtype of `(rec (type (sub (struct shared (field (mut i32)))))).0`
+, meaning it is a struct with one visible `i32` field that can be accessed with all the standard
+struct accessors as well as the new atomic struct accessors. This field is the futex control field
+that is atomically checked when waiting on the waiter queue. `waitqueue` is also always shared.
+There is no non-shared version of it.
 
 > Note: Should we have a non-shared version of `waitqueue` just for orthogonality? The type would be
 > useless, but orthogonality would be helpful for optimizers.
 
 To wait on and notify a particular `waitqueueref`, there are two additional instructions:
 
- - `waitqueue.wait: [waitqueueref, (ref null (shared eq)), i64] -> [i32]`
+ - `waitqueue.wait: [waitqueueref, i32, i64] -> [i32]`
 
 This instruction behaves just like `memory.atomic.wait32` and `memory.atomic.wait64`: the first
-operand is the wait queue to wait on, the `(ref null (shared eq))` operand is the expected value of
+operand is the wait queue to wait on, the `i32` operand is the expected value of
 the control field, and the `i64` operand is a relative timeout in nanoseconds. The return value is
 `0` when the wait succeeded and the current thread was woken up by a notify, `1` when the thread did
 not go to sleep because the control field did not have the expected value, or `2` because the
@@ -433,9 +432,10 @@ This instruction behaves just like `memory.atomic.notify`: The first operand is 
 wait on and the `i32` operand is the maximum number of waiters to wake up. The result is the number
 of waiters that were actually woken up.
 
-> Note: It may also be necessary to have versions of the waitqueue where the control field is an i32
-> or i64. This would both allow more bits to be stored in the control word and would allow direct
-> atomic arithmetic rather than requiring updating an i31 in a CAS loop.
+> Note: It may also be necessary to have versions of the waitqueue where the control field is an i64
+> or some subtype of shared eqref. This would allow more bits to be stored in the control word and
+> would allow construction of things like shared WasmGC queues. We should consider parameterizing
+> `waitqueue` and its operations with the control word type.
 
 Threads that are waiting indefinitely on a wait queue that is no longer reachable on threads that
 might possibly notify it are eligible to be garbage collected along with the wait queue itself. This
@@ -503,27 +503,32 @@ across thread boundaries. Additionally, to facilitate calling methods on these s
 have [realm-local prototypes][tls-prototypes] just like shared structs are proposed to have in JS.
 
 The shared versions of the JS API types will share constructors with their existing unshared
-versions, but will take an additional `shared: bool` option in an options bag argument. These
-constructors will be extended to take this new option:
+versions, but will take an additional `shared: bool` option in their type descriptor arguments.
+The type descriptor arguments to these constructors will be extended:
 
  - `WebAssembly.Function`
  - `WebAssembly.Table`
  - `WebAssembly.Global`
  - `WebAssembly.Tag`
- - `WebAssembly.Exception`
 
 These new shared objects provide an API that mirrors that provided by their unshared analogues. Like
-shared memories, shared tables must be initialized with a maximum size. Shared exceptions may only
-be created with shared tags. Storing unshared data into a shared global or table throws an
+shared memories, shared tables must be initialized with a maximum size. Shared
+`WebAssembly.Exception` objects are created by passing shared `WebAssembly.Tag` objects to the
+`WebAssembly.Exception` constructor. Storing unshared data into a shared global or table throws an
 exception. In addition, all of these objects will be extended with a read-only `shared` boolean
 property that can be used to test whether the object is shared or not.
+
+> Note: It would be good to get the sharedness boolean into the types used with the proposed [type
+> reflection JS
+> API](https://github.com/WebAssembly/js-types/blob/main/proposals/js-types/Overview.md).
 
 While the behaviors chosen here mirror those proposed in the JS shared structs proposal,
 implementation of this behavior does not require any changes in the JS specification because this
 proposal does not propose any user-programmable means in JS to create new kinds of shared objects.
 
 We also expose thread-local globals with a `thread-local` option in the `WebAssembly.Global`
-constructor. The `thread-local` option, if it is set, takes precedence over the `shared` option.
+constructor's type descriptor. The `thread-local` option, if it is set, takes precedence over the
+`shared` option.
 
 > Note: It would also be possible to introduce new `Shared` variants of the constructors rather than
 > using an option bag argument. This would allow testing with `instanceof` instead of the `shared`
@@ -537,16 +542,16 @@ constructor. The `thread-local` option, if it is set, takes precedence over the 
 One of the most important requirements for this proposal is that there be some way for shared
 functions to call JS functions, which are inherently unshared. Without this capability, shared
 functions would not be able to directly interact with their environment on the Web. To allow shared
-functions to call unshared JS functions, we extend the `WebAssembly.SharedFunction` constructor with
-a new `thread-local: bool` option.
+functions to call unshared JS functions, we extend the `WebAssembly.Function` constructor with a new
+`thread-local: bool` option.
 
-When `thread-local` is true, the resulting `WebAssembly.SharedFunction` is a "thread-local function
+When `thread-local` is true, the resulting `WebAssembly.Function` is a "thread-local function
 wrapper." It behaves like a thread-local global initialized to `ref.null nofunc` on each thread, so
 if it is called immediately after being shared with another thread, it will behave as though calling
-`null`. `WebAssembly.SharedFunction` has a `set` method that sets the wrapped function on the
+`null`. `WebAssembly.Function` has a `initialize` method that sets the wrapped function on the
 current thread, and it throws an error if the current thread's wrapped function has already been set
-to a non-null value. The `WebAssembly.SharedFunction` constructor with the `thread-local` option
-supplied implicitly calls `set`, so it cannot be called again on that original thread (unless the
+to a non-null value. The `WebAssembly.Function` constructor with the `thread-local` option supplied
+implicitly calls `initialize`, so it cannot be called again on that original thread (unless the
 function was constructed wrapping `null` in the first place).
 
 The `thread-local` option composes with the `async` option from JSPI. A shared function wrapper that
@@ -636,6 +641,13 @@ the memory is `shared`. Likewise:
 
 #### Instructions
 
+`ref.eq` typing is expanded to allow either of its arguments to be shared eqref. To allow this, our
+principal type rule is amended to allow unconstrained sharedness metavariables, just like it allows
+unconstrained nullability metavariables. In general, all instructions that operate on unshared
+references are allowed to operate on shared references as well. `array.len` is another example.
+
+In addition, the following instructions are introduced:
+
 | Instructions | opcode | notes |
 | ------------ | ------ | ----- |
 | `global.atomic.get <u32:ordering> <globalidx>` | 0xFE 0x4F | valid for i32, i64, and <: anyref globals. |
@@ -654,7 +666,7 @@ the memory is `shared`. Likewise:
 | `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5C | valid for i32, i64, and <: anyref fields. |
 | `struct.atomic.get_s <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5D | valid for i8 and i16 fields. |
 | `struct.atomic.get_u <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5E | valid for i8 and i16 fields. |
-| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5F | valid for i32, i64, and <: anyref fields. |
+| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5F | valid for i8, i16, i32, i64, and <: anyref fields. |
 | `struct.atomic.rmw.add <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x60 | valid for i32 and i64 fields. |
 | `struct.atomic.rmw.sub <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x61 | valid for i32 and i64 fields. |
 | `struct.atomic.rmw.and <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i32 and i64 fields. |
@@ -665,7 +677,7 @@ the memory is `shared`. Likewise:
 | `array.atomic.get <u32:ordering> <typeidx>` | 0xFE 0x67 | valid for i32, i64, and <: anyref arrays. |
 | `array.atomic.get_s <u32:ordering> <typeidx>` | 0xFE 0x68 | valid for i8 and i16 arrays. |
 | `array.atomic.get_u <u32:ordering> <typeidx>` | 0xFE 0x69 | valid for i8 and i16 arrays. |
-| `array.atomic.set <u32:ordering> <typeidx>` | 0xFE 0x6A | valid for i32, i64, and <: anyref arrays. |
+| `array.atomic.set <u32:ordering> <typeidx>` | 0xFE 0x6A | valid for i8, i16, i32, i64, and <: anyref arrays. |
 | `array.atomic.rmw.add <u32:ordering> <typeidx>` | 0xFE 0x6B | valid for i32 and i64 arrays. |
 | `array.atomic.rmw.sub <u32:ordering> <typeidx>` | 0xFE 0x6C | valid for i32 and i64 arrays. |
 | `array.atomic.rmw.and <u32:ordering> <typeidx>` | 0xFE 0x6D | valid for i32 and i64 arrays. |
@@ -673,17 +685,16 @@ the memory is `shared`. Likewise:
 | `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
 | `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64, and <: anyref arrays. |
 | `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and <: eqref arrays. |
-| `ref.shared.eq` | 0xFE 0x72 | valid for shared eqref operands |
 
 Atomic accesses to references are deliberately restricted to anyref, shared anyref, and their
 subtypes because other references (e.g. funcref and externref) may have arbitrarily large
 representations that do not allow for efficient atomic accesses on the underlying hardware. Engines
 still must ensure that non-atomic accesses to any reference do not tear.
 
-> TODO: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref
+> Note: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref
 > fields and table slots?
 
-> TODO: Should we allow atomic accesses to other reference types as well, despite their possible
+> Note: Should we allow atomic accesses to other reference types as well, despite their possible
 > large sizes? It may be the case that strategies to prevent tearing also admit synchronizing
 > accesses.
 
@@ -724,7 +735,7 @@ This proposal does not include a language-level mechanism for "joining" a thread
 instructions.
 
 [wasi-libc-pthread-join]: https://github.com/WebAssembly/wasi-libc/blob/bd950eb128bff337153de217b11270f948d04bb4/libc-top-half/musl/src/thread/pthread_join.c
-[emscripten-pthread-join]: TODO
+[emscripten-pthread-join]: https://github.com/emscripten-core/emscripten/blob/main/system/lib/libc/musl/src/thread/pthread_join.c
 
 ### What about exiting a thread?
 

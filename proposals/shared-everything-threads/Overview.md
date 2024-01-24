@@ -675,6 +675,10 @@ still must ensure that non-atomic accesses to any reference do not tear.
 > TODO: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref
 > fields and table slots?
 
+> TODO: Should we allow atomic accesses to other reference types as well, despite their possible
+> large sizes? It may be the case that strategies to prevent tearing also admit synchronizing
+> accesses.
+
 ## Other Considerations (FAQ)
 
 ### How will toolchains need to change?

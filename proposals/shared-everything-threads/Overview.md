@@ -401,24 +401,26 @@ primitive that does not depend on linear memory. We propose adding a new abstrac
 `waitqueue` to serve as this new primitive.
 
 Unlike other abstract heap types, which are only ever subtypes of other abstract heap types (or are
-bottom types), `waitqueue` is a final subtype of `(rec (type (sub (struct shared (field i32))))).0`,
-meaning it is a struct with one visible `i32` field that can be accessed with all the standard
-struct accessors as well as the new atomic struct accessors. This field is the futex control field
-that is atomically checked when waiting on the waiter queue. `waitqueue` is also always shared.
-There is no non-shared version of it. It is not valid to declare a new subtype of `waitqueue`.
+bottom types), `waitqueue` is a final subtype of `(rec (type (sub (struct shared (field (mut (ref
+null (shared eq)))))))).0`, meaning it is a struct with one visible shared eqref field that can be
+accessed with all the standard struct accessors as well as the new atomic struct accessors. This
+field is the futex control field that is atomically checked when waiting on the waiter queue.
+`waitqueue` is also always shared. There is no non-shared version of it. It is not valid to declare
+a new subtype of `waitqueue`.
 
 > Note: Should we have a non-shared version of `waitqueue` just for orthogonality? The type would be
 > useless, but orthogonality would be helpful for optimizers.
 
 To wait on and notify a particular `waitqueueref`, there are two additional instructions:
 
- - `waitqueue.wait: [waitqueueref, i32, i64] -> [i32]`
+ - `waitqueue.wait: [waitqueueref, (ref null (shared eq)), i64] -> [i32]`
 
 This instruction behaves just like `memory.atomic.wait32` and `memory.atomic.wait64`: the first
-operand is the wait queue to wait on, the `i32` operand is the expected value of the control field,
-and the `i64` operand is a relative timeout in nanoseconds. The return value is `0` when the wait
-succeeded and the current thread was woken up by a notify, `1` when the thread did not go to sleep
-because the control field did not have the expected value, or `2` because the timeout expired.
+operand is the wait queue to wait on, the `(ref null (shared eq))` operand is the expected value of
+the control field, and the `i64` operand is a relative timeout in nanoseconds. The return value is
+`0` when the wait succeeded and the current thread was woken up by a notify, `1` when the thread did
+not go to sleep because the control field did not have the expected value, or `2` because the
+timeout expired.
 
 Like the existing linear memory wait instructions, `waitqueue.wait` disallows spurious wakeups.
 
@@ -431,11 +433,13 @@ This instruction behaves just like `memory.atomic.notify`: The first operand is 
 wait on and the `i32` operand is the maximum number of waiters to wake up. The result is the number
 of waiters that were actually woken up.
 
-> Note: It may also be necessary to have versions of the waitqueue where the control field is an i64
-> or a shared eqref. An eqref version almost satisfies the use case for the i32 version as well,
-> since you could store an i31ref in the eqref field, except that you would not be able to perform
-> the full complement of i31 RMW operations on the eqref without it being statically typed as an
-> i31.
+> Note: It may also be necessary to have versions of the waitqueue where the control field is an i32
+> or i64. This would both allow more bits to be stored in the control word and would allow direct
+> atomic arithmetic rather than requiring updating an i31 in a CAS loop.
+
+Threads that are waiting indefinitely on a wait queue that is no longer reachable on threads that
+might possibly notify it are eligible to be garbage collected along with the wait queue itself. This
+may be observable if it causes finalizers registered in the host to be fired.
 
 [wait-notify]: https://github.com/WebAssembly/threads/blob/main/proposals/threads/Overview.md#wait-and-notify-operators
 
@@ -487,7 +491,7 @@ Waitqueue references are converted to `WebAssembly.WaitQueue` objects, described
 
 [proposal-structs]: https://github.com/tc39/proposal-structs
 
-#### Shared annotations
+#### Shared Annotations
 
 Just like the original threads proposal exposed shared memories in the JS API, this proposal exposes
 shared functions, tables, globals, tags, and exceptions. Unlike shared `WebAssembly.Memory` objects,
@@ -498,29 +502,32 @@ behave mostly like [sealed] JS objects, and their identities survive round trips
 across thread boundaries. Additionally, to facilitate calling methods on these shared objects, they
 have [realm-local prototypes][tls-prototypes] just like shared structs are proposed to have in JS.
 
-The shared versions of the JS API types (besides memories) will be represented with new
-constructors:
+The shared versions of the JS API types will share constructors with their existing unshared
+versions, but will take an additional `shared: bool` option in an options bag argument. These
+constructors will be extended to take this new option:
 
- - `WebAssembly.SharedFunction`
- - `WebAssembly.SharedTable`
- - `WebAssembly.SharedGlobal`
- - `WebAssembly.SharedTag`
- - `WebAssembly.SharedException`
+ - `WebAssembly.Function`
+ - `WebAssembly.Table`
+ - `WebAssembly.Global`
+ - `WebAssembly.Tag`
+ - `WebAssembly.Exception`
 
-These new types provide an API that mirrors that provided by their unshared analogues. Like shared
-memories, shared tables must be initialized with a maximum size. Shared exceptions may only be
-created with shared tags. Storing unshared data into a shared global or table throws an exception.
+These new shared objects provide an API that mirrors that provided by their unshared analogues. Like
+shared memories, shared tables must be initialized with a maximum size. Shared exceptions may only
+be created with shared tags. Storing unshared data into a shared global or table throws an
+exception. In addition, all of these objects will be extended with a read-only `shared` boolean
+property that can be used to test whether the object is shared or not.
 
 While the behaviors chosen here mirror those proposed in the JS shared structs proposal,
 implementation of this behavior does not require any changes in the JS specification because this
 proposal does not propose any user-programmable means in JS to create new kinds of shared objects.
 
-We also expose thread-local globals with a `thread-local` option in the `WebAssembly.SharedGlobal`
-constructor.
+We also expose thread-local globals with a `thread-local` option in the `WebAssembly.Global`
+constructor. The `thread-local` option, if it is set, takes precedence over the `shared` option.
 
-> Note: It would also be possible to reuse the existing constructors and add a `shared` property for
-> testing rather than use new constructors, which allow testing with `instanceof`. This would be
-> more similar (but not quite the same) as how shared `WebAssembly.Memory` works.
+> Note: It would also be possible to introduce new `Shared` variants of the constructors rather than
+> using an option bag argument. This would allow testing with `instanceof` instead of the `shared`
+> read-only property.
 
 [sealed]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal
 [tls-prototypes]: https://github.com/tc39/proposal-structs/blob/main/ATTACHING-BEHAVIOR.md
@@ -537,7 +544,7 @@ When `thread-local` is true, the resulting `WebAssembly.SharedFunction` is a "th
 wrapper." It behaves like a thread-local global initialized to `ref.null nofunc` on each thread, so
 if it is called immediately after being shared with another thread, it will behave as though calling
 `null`. `WebAssembly.SharedFunction` has a `set` method that sets the wrapped function on the
-current realm, and it throws an error if the current realm's wrapped function has already been set
+current thread, and it throws an error if the current thread's wrapped function has already been set
 to a non-null value. The `WebAssembly.SharedFunction` constructor with the `thread-local` option
 supplied implicitly calls `set`, so it cannot be called again on that original thread (unless the
 function was constructed wrapping `null` in the first place).
@@ -666,6 +673,7 @@ the memory is `shared`. Likewise:
 | `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
 | `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64, and <: anyref arrays. |
 | `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and <: eqref arrays. |
+| `ref.shared.eq` | 0xFE 0x72 | valid for shared eqref operands |
 
 Atomic accesses to references are deliberately restricted to anyref, shared anyref, and their
 subtypes because other references (e.g. funcref and externref) may have arbitrarily large

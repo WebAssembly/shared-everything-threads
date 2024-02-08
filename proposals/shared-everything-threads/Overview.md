@@ -616,24 +616,23 @@ now interpret as a u32:ordering immediate, allowing us to express release-acquir
 The shared annotation occupies the same bit location as it does for memory types. In the threads
 proposal, the `limits` flag byte on memories is extended such that if bit 1 (the second bit) is set,
 the memory is `shared`. Likewise:
-- tables are `shared` if the `limit` flag byte has bit 1 set
-- globals are `shared` if the `mut` flag byte has bit 1 set
 
-| type | opcode |
-| ---- | ------ |
-| `func shared [valtype*] -> [valtype*]` | 0x5d (-35 as s7) |
-| `struct shared fieldtype*` | 0x5c (-36 as s7) |
-| `array shared fieldtype` | 0x5b (-37 as s7) |
-| `(shared nofunc)` | 0x5A |
-| `(shared noextern)` | 0x59 |
-| `(shared none)` | 0x58 |
-| `(shared func)` | 0x57 |
-| `(shared extern)` | 0x56 |
-| `(shared any)` | 0x55 |
-| `(shared eq)` | 0x54 |
-| `(shared i31)` | 0x53 |
-| `(shared struct)` | 0x52 |
-| `(shared array)` | 0x51 |
+ - tables are `shared` if the `limit` flag byte has bit 1 set
+ - globals are `shared` if the `mut` flag byte has bit 1 set
+ - element segments are `shared` if bit 3 of their first u32 field is set (bits
+   0-2 are already used).
+ - data segments are `shared` if bit 2 of their first u32 fields is set (bits
+   0-1 are already used).
+ - tags are shared if their first byte is 0x01 (it is currently reserved and
+   required to be 0x0).
+
+| type                                   | opcode             |
+|----------------------------------------|--------------------|
+| `func shared [valtype*] -> [valtype*]` | 0x5d (-35 as s7)   |
+| `struct shared fieldtype*`             | 0x5c (-36 as s7)   |
+| `array shared fieldtype`               | 0x5b (-37 as s7)   |
+| `waitqueue`                            | 0x68 (-24 as s7)   |
+| `(shared absheaptype)`                 | 0x65 `absheaptype` |
 
 > TODO: Refactor these to use a "shared" prefix opcode to take up less of the opcode space.
 

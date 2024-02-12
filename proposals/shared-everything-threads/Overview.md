@@ -617,26 +617,20 @@ The shared annotation occupies the same bit location as it does for memory types
 proposal, the `limits` flag byte on memories is extended such that if bit 1 (the second bit) is set,
 the memory is `shared`. Likewise:
 
- - tables are `shared` if the `limit` flag byte has bit 1 set
- - globals are `shared` if the `mut` flag byte has bit 1 set
+ - tables are `shared` if the `limit` flag byte has bit 1 set, just like for memories.
+ - globals are `shared` if the `mut` flag byte has bit 1 set.
  - element segments are `shared` if bit 3 of their first u32 field is set (bits
    0-2 are already used).
- - data segments are `shared` if bit 2 of their first u32 fields is set (bits
-   0-1 are already used).
+ - data segments are `shared` if bit 3 of their first u32 fields is set (only bits
+   0-1 are already used, but we choose bit 3 for consistency with element segments).
  - tags are shared if their first byte is 0x01 (it is currently reserved and
    required to be 0x0).
 
 | type                                   | opcode             |
 |----------------------------------------|--------------------|
-| `func shared [valtype*] -> [valtype*]` | 0x5d (-35 as s7)   |
-| `struct shared fieldtype*`             | 0x5c (-36 as s7)   |
-| `array shared fieldtype`               | 0x5b (-37 as s7)   |
 | `waitqueue`                            | 0x68 (-24 as s7)   |
 | `(shared absheaptype)`                 | 0x65 `absheaptype` |
-
-> TODO: Refactor these to use a "shared" prefix opcode to take up less of the opcode space.
-
-> TODO: We also need a binary format for shared module item types.
+| `(shared comptype)`                    | 0x65 `comptype`    |
 
 #### Instructions
 

@@ -307,16 +307,21 @@ Thread-local globals can be imported and exported just like normal or shared glo
 
 One of the nice things about this thread-local storage design is that it is declarative enough to
 admit multiple implementation strategies. A naive implementation would be to store thread-local
-global values in a concurrent hash map keyed by triples of instance, global, and thread IDs.
-Thread-local global accesses would lower to accesses to this hash map.
+global values in a concurrent hash map keyed by global and thread IDs. Thread-local global accesses
+would lower to accesses to this hash map.
 
 A more sophisticated implementation would be to store TLS blocks containing all the thread-local
-globals for a module in the map and use pairs of instance and thread IDs as the keys instead of
-triples. Thread-local global accesses would then lower to accesses to the hash map to get the TLS
-block base address followed by applications of an offset to access the global within the block. This
-implementation has the advantage that the TLS block base address can be reused across accesses to
-multiple thread-local globals, and in the extreme could be pinned to a register to eliminate all but
-the initial hash map access for each instance on each thread.
+globals for a module in a map keyed by pairs of instance and thread IDs. Thread-local global
+accesses would then lower to accesses to the hash map to get the TLS block base address followed by
+applications of an offset to access the global within the block. This implementation has the
+advantage that the TLS block base address can be reused across accesses to multiple thread-local
+globals, and in the extreme could be pinned to a register to eliminate all but the initial hash map
+access for each instance on each thread.
+
+A further optimization would be to store a table of TLS bases indexed by thread ID on each instance
+or indexed by instance ID in engine-native TLS, depending on whether the number of threads or
+instances in the system is expected to be lower. Assuming indices can be safely reused, this allows
+the lookup to use direct indexing rather than hashing, speeding up the fast path.
 
 This design also allows implementations to be flexible regarding when they initialize thread-local
 globals. An engine wishing to eagerly initialize the globals would initialize the new TLS for every

@@ -576,6 +576,10 @@ entire thread or agent.
 > once per realm. Note that the prototypes on shared objects in the JS API, including function
 > wrappers, will be realm-local regardless of what context we choose for thread-local globals and
 > function wrappers
+>
+> TODO: JSPI no longer uses an option on `WebAssembly.Function`. We should consider using separate
+> wrappers that compose with JSPI's wrappers and share their benefit of not requiring type
+> reflection.
 
 [jspi]: https://github.com/WebAssembly/js-promise-integration
 [realm]: https://tc39.es/ecma262/#realm

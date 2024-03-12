@@ -702,14 +702,11 @@ still must ensure that non-atomic accesses to any reference do not tear.
 
 ## Other Considerations (FAQ)
 
-### How will toolchains need to change?
+### How will toolchains used `shared`?
 
-Toolchains like LLVM will be expected to mark all WebAssembly objects that a parallel function
-touches with the `shared` annotation. It is unclear how difficult this might be and one conservative
-approach (for the toolchain) is to simply mark all module objects as `shared` in certain thread
-models. For more discussion: [How should toolchains apply `shared`?][toolchain-shared-discussion].
-
-[toolchain-shared-discussion]: https://github.com/abrown/thread-spawn/discussions/5
+Because of its virality—`shared` things can only refer to other `shared` things—we expect that
+toolchains using shared-everything threads will switch entirely to emitting `shared` items and will
+not use non-shared items at all, except perhaps in special cases around host interop.
 
 ### What about thread IDs (TIDs)?
 

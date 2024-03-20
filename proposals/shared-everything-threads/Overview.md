@@ -704,34 +704,32 @@ models. For more discussion: [How should toolchains apply `shared`?][toolchain-s
 
 ### How will GCs and engines need to change?
 
-GCs that historically assume that there is only a single mutator thread will have to newly be able
-to handle heaps with multiple mutators running in parallel. Since sharedness is part of static
-types, engines can know at allocation or access time when they need to do something different for
-shared objects, so it is possible for them to add a separate concept of shared heap on top of their
-existing single-threaded heaps. This might be a reasonable intermediate architecture, even for
-engines that plan on eventually switching to having shared heaps as their only primitive.
-
-For engines that choose to have both shared and unshared heaps, references from unshared objects to
-shared objects will have to be treated as roots when the garbage collection runs on the shared heap.
+GCs that historically assume that there is only a single mutator thread will need to handle heaps
+with multiple mutators running in parallel. Since sharedness is part of static types, engines can
+know at allocation or access time when they need to do something different for shared objects, so it
+is possible for them to add a separate concept of shared heap on top of their existing
+single-threaded heaps. This might be a reasonable intermediate architecture, even for engines that
+plan on eventually switching to having shared heaps as their only primitive.
 
 References from shared objects to unshared are normally disallowed, but we could choose to support
 them in limited cases to make TLS or thread-bound data more ergonomic. If we do, there are varying
-guarantees we could choose to make about how the GC treats these references.
+guarantees implementations could make about how the GC treats these references. (As usual, the spec
+will say nothing about how garbage is collected.)
 
-The weakest semantics would be that shared-to-unshared references never suffice to keep the unshared
-object alive. Users would have to root unshared objects for the duration of their intended
-lifetimes, so this is no more expressive than simply disallowing shared-to-unshared references.
+The weakest behavior would be that shared-to-unshared references never suffice to keep the unshared
+object alive, i.e. they are only allowed as weak references. Users would have to root unshared
+objects for the duration of their intended lifetimes, so this is no more expressive than simply
+disallowing shared-to-unshared references.
 
-The strongest semantics would be that shared-to-unshared references behave exactly like normal
-references with respect to garbage collection. This requires the garbage collector to have
-visibility over the shared and unshared heaps from all threads so it can find unreachable cross-heap
-cycles.
+The strongest behavior would be that shared-to-unshared references behave exactly like normal
+references with respect to garbage collection. To collect cross-heap cycles, the garbage collector
+would need visibility over the heaps from all threads.
 
-An intermediate semantics would be the same as the strong semantics, but without the guarantee that
-cross-heap cycles will be collected. This is as expressive as the weak semantics augmented with
-uncollectible shared-key finalization registries and allows the garbage collector to use a snapshot
-of the incoming references from the shared heap as roots in a local collection of each unshared
-heap.
+If shared objects are allowed as keys in `FinalizationRegistry`, then the weak behavior would be
+equivalent in expressiveness to the strong behavior, except that it would not be able to collect
+cross-heap cycles. The `FinalizationRegistry` would be able to automatically manage the lifetimes of
+rooted unshared objects as long as they do not cyclically keep the shared objects that refer to them
+alive.
 
 ### What about thread IDs (TIDs)?
 

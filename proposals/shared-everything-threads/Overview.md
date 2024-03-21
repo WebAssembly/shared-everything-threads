@@ -725,11 +725,12 @@ The strongest behavior would be that shared-to-unshared references behave exactl
 references with respect to garbage collection. To collect cross-heap cycles, the garbage collector
 would need visibility over the heaps from all threads.
 
-If shared objects are allowed as keys in `FinalizationRegistry`, then the weak behavior would be
-equivalent in expressiveness to the strong behavior, except that it would not be able to collect
-cross-heap cycles. The `FinalizationRegistry` would be able to automatically manage the lifetimes of
-rooted unshared objects as long as they do not cyclically keep the shared objects that refer to them
-alive.
+An intermediate behavior would be the strong behavior but without cross-heap cycle collection. This
+is as expressive as the weak behavior if we were to hypothetically augment it by allowing shared
+objects to be keys in `FinalizationRegistry` but not `WeakMap` (which would be too inconsistent for
+us to actually ship). The `FinalizationRegistry` would be able to automatically manage the lifetimes
+of rooted unshared objects as long as they do not cyclically keep the shared objects that refer to
+them alive.
 
 ### What about thread IDs (TIDs)?
 

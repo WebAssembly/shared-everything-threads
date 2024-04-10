@@ -708,6 +708,36 @@ Because of its virality—`shared` things can only refer to other `shared` thing
 toolchains using shared-everything threads will switch entirely to emitting `shared` items and will
 not use non-shared items at all, except perhaps in special cases around host interop.
 
+### How will GCs and engines need to change?
+
+GCs that historically assume that there is only a single mutator thread will need to handle heaps
+with multiple mutators running in parallel. Since sharedness is part of static types, engines can
+know at allocation or access time when they need to do something different for shared objects, so it
+is possible for them to add a separate concept of shared heap on top of their existing
+single-threaded heaps. This might be a reasonable intermediate architecture, even for engines that
+plan on eventually switching to having shared heaps as their only primitive.
+
+References from shared objects to unshared are normally disallowed, but we could choose to support
+them in limited cases to make TLS or thread-bound data more ergonomic. If we do, there are varying
+guarantees implementations could make about how the GC treats these references. (As usual, the spec
+will say nothing about how garbage is collected.)
+
+The weakest behavior would be that shared-to-unshared references never suffice to keep the unshared
+object alive, i.e. they are only allowed as weak references. Users would have to root unshared
+objects for the duration of their intended lifetimes, so this is no more expressive than simply
+disallowing shared-to-unshared references.
+
+The strongest behavior would be that shared-to-unshared references behave exactly like normal
+references with respect to garbage collection. To collect cross-heap cycles, the garbage collector
+would need visibility over the heaps from all threads.
+
+An intermediate behavior would be the strong behavior but without cross-heap cycle collection. This
+is as expressive as the weak behavior if we were to hypothetically augment it by allowing shared
+objects to be keys in `FinalizationRegistry` but not `WeakMap` (which would be too inconsistent for
+us to actually ship). The `FinalizationRegistry` would be able to automatically manage the lifetimes
+of rooted unshared objects as long as they do not cyclically keep the shared objects that refer to
+them alive.
+
 ### What about thread IDs (TIDs)?
 
 This proposal does not require TIDs; TIDs are left for higher-level libraries to implement. As

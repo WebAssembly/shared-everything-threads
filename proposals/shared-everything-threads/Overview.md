@@ -591,20 +591,21 @@ entire thread or agent.
 
 #### Thread-Bound Data
 
-Just as WebAssembly produces expect to be able to call JS functions, they also expect to be able to
-hold handles to JS objects. For example, a language compiled to shared WasmGC may need to hold
-references to DOM nodes in some of its shared objects. Normally this would be disallowed because DOM
-nodes are not shareable and shared-to-unshared references are disallowed. To bridge this gap, we
-need a utility that allows shared-to-unshared objects as an exception to the general rule, assuming
-that Web GCs can support such an exception (see the discussion in the FAQ below). To avoid
-complicating the core language and forcing every non-Web engine to support shared-to-unshared edges,
-this utility is a new JS API.
+Just as WebAssembly users expect to be able to call JS functions, they also expect to be able to
+reference JS objects. For example, a language compiled to shared WasmGC may need to hold references
+to DOM nodes in some of its shared objects. Normally this would be disallowed because DOM nodes are
+not shareable and shared-to-unshared references are disallowed. To bridge this gap, we need a
+utility that allows shared-to-unshared objects as an exception to the general rule, assuming that
+browser GCs can support such an exception (see the discussion in the FAQ below). To avoid
+complicating the core language and forcing every engine to support shared-to-unshared edges, this
+utility is a new JS API.
 
 `ThreadBoundData` is a shared JS object that wraps any other arbitrary JS object. `ThreadBoundData`
 provides access to the wrapped object via a `get` method that throws an exception when called on any
-thread besides the thread that owns the wrapped object, ensuring that the wrapped object can be
-observed only on one thread, even if the `ThreadBoundData` is shared between multiple threads. Like
-other shared JS objects, it can be converted to a shared externref on the JS/Wasm boundary.
+agent besides the one on which the `ThreadBoundData` wrapper was created, ensuring that the wrapped
+object can be observed only on one thread, even if the `ThreadBoundData` is shared between multiple
+threads. Like other shared JS objects, it can be converted to a shared externref on the JS/Wasm
+boundary.
 
 See the FAQ below for discussion on how the lifetime of the shared `ThreadBoundData` may affect the
 lifetime of the wrapped object.

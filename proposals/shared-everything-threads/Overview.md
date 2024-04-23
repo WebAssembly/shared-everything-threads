@@ -448,6 +448,20 @@ may be observable if it causes finalizers registered in the host to be fired.
 
 [wait-notify]: https://github.com/WebAssembly/threads/blob/main/proposals/threads/Overview.md#wait-and-notify-operators
 
+### Spinlock Relaxation: `nop_pause`
+
+Efficient lock implementations do not just use waiter queues; they also use bounded spinlocks. To
+improve the performance and power efficiency of these spinlocks, we introduce a `nop_pause`
+instruction that is semantically a no-op, but is lowered to architecture-specific instructions like
+[`PAUSE`][pause]. This instruction was [discussed][threads-spinloop] on the original threads
+proposal, but did not make it into the spec at that point. There is also TC39
+[proposal][tc39-microwait] adding a higher-level version of this primitive to JS as
+`Atomics.microwait`.
+
+[pause]: https://www.felixcloutier.com/x86/pause.html
+[threads-spinloop]: https://github.com/WebAssembly/threads/issues/15
+[tc39-microwait]: https://github.com/tc39/proposal-atomics-microwait
+
 ### Memory Model Considerations
 
 To improve performance for linear memory languages using threading (e.g. C, C++, and Rust) and to
@@ -652,6 +666,7 @@ In addition, the following instructions are introduced:
 
 | Instructions | opcode | notes |
 | ------------ | ------ | ----- |
+| `nop_pause`  | 0xFE 0x04 | |
 | `global.atomic.get <u32:ordering> <globalidx>` | 0xFE 0x4F | valid for i32, i64, and <: anyref globals. |
 | `global.atomic.set <u32:ordering> <globalidx>` | 0xFE 0x50 | valid for i32, i64, and <: anyref globals. |
 | `global.atomic.rmw.add <u32:ordering> <globalidx>` | 0xFE 0x51 | valid for i32 and i64 globals. |

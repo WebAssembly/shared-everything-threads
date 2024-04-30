@@ -670,10 +670,6 @@ be shared if and only if the referred-to function is shared. An exception is `re
 no immediate that can determine the sharedness of the result. We therefore need a new
 `ref.i31_shared` instruction as well.
 
-> Note: If there is a use case for creating non-shared references to shared heap objects, we may
-> also need an instruction for converting a shared reference to a non-shared reference. This would
-> be more scalable than duplicating all the allocation instructions.
-
 In addition, the following instructions are introduced:
 
 | Instructions | opcode | notes |

@@ -660,7 +660,15 @@ the memory is `shared`. Likewise:
 `ref.eq` typing is expanded to allow either of its arguments to be shared eqref. To allow this, our
 principal type rule is amended to allow unconstrained sharedness metavariables, just like it allows
 unconstrained nullability metavariables. In general, all instructions that operate on unshared
-references are allowed to operate on shared references as well. `array.len` is another example.
+references are allowed to operate on shared references as well. `array.len` and `i31.get_u` are
+other examples.
+
+Most instructions that create reference values (e.g. `struct.new`, `ref.func`, `ref.null`) do not
+need new versions for allocating shared references because their type annotation immediates
+determine whether the reference will be shared or not. In the case of `ref.func`, the reference will
+be shared if and only if the referred-to function is shared. An exception is `ref.i31`, which takes
+no immediate that can determine the sharedness of the result. We therefore need a new
+`ref.i31_shared` instruction as well.
 
 In addition, the following instructions are introduced:
 
@@ -702,6 +710,7 @@ In addition, the following instructions are introduced:
 | `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
 | `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64, and <: anyref arrays. |
 | `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and <: eqref arrays. |
+| `ref.i31_shared` | 0xFB 0x1F | |
 
 Atomic accesses to references are deliberately restricted to anyref, shared anyref, and their
 subtypes because other references (e.g. funcref and externref) may have arbitrarily large

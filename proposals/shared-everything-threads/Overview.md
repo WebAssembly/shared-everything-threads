@@ -151,6 +151,12 @@ instructions are valid for both shared and unshared globals.
 
 [new-instructions]: TODO
 
+> Note: Values written to globals are always treated atomically. That is, each read of a global that
+> is subject to multiple simultaneous writes will always observe only one of the written values, never
+> a (bytewise or otherwise) combination of the two.
+>
+> For certain large types such as `v128`, runtimes may need to do extra work to provide this guarantee.
+
 #### Functions
 
 The `typeidx` in the structure of a function determines whether the function is shared, so the

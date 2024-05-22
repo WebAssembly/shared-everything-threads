@@ -179,6 +179,21 @@ functype ::= share resulttype -> resulttype
 > still have to extend validation of instructions to prohibit referencing unshared module fields in
 > shared contexts.
 
+#### Reference Types
+
+We extend the syntax of `reftype` to add `shared` attributes:
+
+```
+sharereftype ::= share reftype
+```
+
+This allows specifying `shared` versions of reference types in either long form or short form. The following are equivalent, e.g.:
+- `(shared anyref)`
+- `(shared (ref null any))`
+
+As expected, instructions that interact with references (`ref.null`, `ref.func`) _pass on_ the
+`shared` attribute of their argument.
+
 #### Heap Types
 
 The syntax of `absheaptype` (abstract type) is extended to make `shareabsheaptype`, which will be

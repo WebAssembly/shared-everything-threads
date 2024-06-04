@@ -133,7 +133,7 @@ tables are presented [below][new-instructions]. The new instructions are valid f
 unshared tables.
 
 [sequentially consistent]: https://en.wikipedia.org/wiki/Sequential_consistency
-[new-instructions]: TODO
+[new-instructions]: instructions
 
 #### Globals
 
@@ -149,7 +149,7 @@ The existing `global.get` and `global.set` instructions provide unordered access
 New instructions adding atomic accesses to globals are presented [below][new-instructions]. The new
 instructions are valid for both shared and unshared globals.
 
-[new-instructions]: TODO
+[new-instructions]: instructions
 
 > Note: Values written to globals are always treated atomically. That is, each read of a global that
 > is subject to multiple simultaneous writes will always observe only one of the written values, never
@@ -750,6 +750,42 @@ still must ensure that non-atomic accesses to any reference do not tear.
 > Note: Should we allow atomic accesses to other reference types as well, despite their possible
 > large sizes? It may be the case that strategies to prevent tearing also admit synchronizing
 > accesses.
+
+### Text format
+
+The text format must change to accommodate `shared` attributes in many places. In general, the
+`shared` attribute _prefixes_ any existing modifiers, such as with global types, e.g.:
+
+```
+globaltype  ::=  t:valtype
+              |  '(' 'mut' t:valtype ')'
+              |  '(' 'shared' t:valtype ')'
+              |  '(' 'shared' 'mut' t:valtype ')'
+```
+
+Both the short and long form of heap types accept a `shared` prefix, albeit with extra parentheses.
+E.g.:
+
+```
+'anyref'                   =  '(' 'ref' 'null' 'any' ')'
+'(' 'shared' 'anyref' ')'  =  '(' 'ref' 'null' '(' 'shared' 'any' ')' ')'
+...
+```
+
+Though only the `any` heap type is shown here, this is applicable to all other abstract heap types.
+It /does not/ apply to concrete heap types (e.g., `(ref null $t)`) since the `shared`-ness will be
+attached to the pointed-to type (e.g., `$t`); thus, `(ref null (shared $t))` is invalid text.
+
+Likewise, composite types can be `shared`, but here we /wrap/ instead of /prefix/:
+
+```
+sharecomptype  ::=  'shared' '(' at:arraytype ')'
+                 |  'shared' '(' st:structtype ')'
+                 |  'shared' '(' ft:functype ')'
+```
+
+What this means is that, to define the type of a shared function with no parameters or results, one
+would write: `(type (shared (func)))`.
 
 ## Other Considerations (FAQ)
 

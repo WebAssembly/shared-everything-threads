@@ -673,14 +673,15 @@ the memory is `shared`. Likewise:
    0-2 are already used).
  - data segments are `shared` if bit 3 of their first u32 fields is set (only bits
    0-1 are already used, but we choose bit 3 for consistency with element segments).
- - tags are shared if their first byte is 0x01 (it is currently reserved and
-   required to be 0x0).
 
-| type                                   | opcode             |
-|----------------------------------------|--------------------|
-| `waitqueue`                            | 0x68 (-24 as s7)   |
-| `(shared absheaptype)`                 | 0x65 `absheaptype` |
-| `(shared comptype)`                    | 0x65 `comptype`    |
+
+The binary formats for `waitqueue`, shared abstract heap types, and `sharecomptype` are given below.
+
+```
+absheaptype ::= ... | 0x68 (-24 as s7) => waitqueue
+heaptype ::= ... | 0x65 ht:absheaptype => (shared ht)
+sharecomptype ::= 0x65 ct:comptype => (shared ct) | ct:comptype => (unshared ct)
+```
 
 #### Instructions
 

@@ -222,8 +222,8 @@ shareabsheaptype ::= ht:absheaptype => unshared ht
 ```
 
 Similarly, the syntax of `comptype` (composite type) is extended to make `sharecomptype`, which will
-be used everywhere `comptype` is used today. This allows for declaring e.g. `(shared (func ...` or
-`(shared (struct ...` types.
+be used everywhere `comptype` is used today. This allows for declaring e.g. `(shared (func ...))` or
+`(shared (struct ...))` types.
 
 ```
 sharecomptype ::= share comptype

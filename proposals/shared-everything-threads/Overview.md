@@ -274,6 +274,9 @@ heap types.
 '(' 'shared' 'nullexnref' ')'    == '(' 'ref' 'null' '(' 'shared' 'noexn' ')' ')'
 ```
 
+Note that these abbreviations only exist for abstract heap types, and in particular `(shared $t)` is
+not a valid heap type because the sharedness is already part of the definition of `$t`.
+
 #### Element Segments
 
 The syntax of `elem` is extended to refer to a new `elemtype` that says whether or not an element

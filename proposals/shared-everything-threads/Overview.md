@@ -256,26 +256,7 @@ abstract types mirrors the subtype relationships among unshared abstract types.
 #### Reference Types
 
 Since heap types already include sharedness, reference types do not need their own additional shared
-annotations, but for convenience the text format is extended with abbreviations for shared abstract
-heap types.
-
-```
-'(' 'shared' 'anyref' ')'        == '(' 'ref' 'null' '(' 'shared' 'any' ')' ')'
-'(' 'shared' 'eqref' ')'         == '(' 'ref' 'null' '(' 'shared' 'eq' ')' ')'
-'(' 'shared' 'structref' ')'     == '(' 'ref' 'null' '(' 'shared' 'struct' ')' ')'
-'(' 'shared' 'arrayref' ')'      == '(' 'ref' 'null' '(' 'shared' 'array' ')' ')'
-'(' 'shared' 'i31ref' ')'        == '(' 'ref' 'null' '(' 'shared' 'i31' ')' ')'
-'(' 'shared' 'nullref' ')'       == '(' 'ref' 'null' '(' 'shared' 'none' ')' ')'
-'(' 'shared' 'funcref' ')'       == '(' 'ref' 'null' '(' 'shared' 'func' ')' ')'
-'(' 'shared' 'nullfuncref' ')'   == '(' 'ref' 'null' '(' 'shared' 'nofunc' ')' ')'
-'(' 'shared' 'externref' ')'     == '(' 'ref' 'null' '(' 'shared' 'extern' ')' ')'
-'(' 'shared' 'nullexternref' ')' == '(' 'ref' 'null' '(' 'shared' 'noextern' ')' ')'
-'(' 'shared' 'exnref' ')'        == '(' 'ref' 'null' '(' 'shared' 'exn' ')' ')'
-'(' 'shared' 'nullexnref' ')'    == '(' 'ref' 'null' '(' 'shared' 'noexn' ')' ')'
-```
-
-Note that these abbreviations only exist for abstract heap types, and in particular `(shared $t)` is
-not a valid heap type because the sharedness is already part of the definition of `$t`.
+annotations.
 
 #### Element Segments
 

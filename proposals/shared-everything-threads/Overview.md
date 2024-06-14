@@ -116,6 +116,20 @@ meaning `shared` or `unshared` introduced in the shared memory proposal.
 
 Shared memories have already been standardized.
 
+For consistency with other shared annotations, the existing text format for shared memories is
+redefined to be an abbreviation of the new text format:
+
+```
+memtype ::= it:index_type lim:limits => unshared it lim
+          | '(' 'shared' it:index_type lim:limits ') => shared it lim
+
+'(' 'memory' id? index_type limits 'shared' ')'
+  == '(' 'memory' id?  '(' 'shared' index_type limits ')' ')'
+
+'(' 'memory' id? '(' 'import' name1 name2 ')' index_type limits 'shared' ')'
+  == '(' 'memory' id? '(' 'import' name1 name2 ')' '(' 'shared' index_type limits ')' ')'
+```
+
 #### Tables
 
 The abstract syntax of `tabletype` is extended:
@@ -124,11 +138,11 @@ The abstract syntax of `tabletype` is extended:
 tabletype ::= share index_type limits reftype
 ```
 
-Similarly, the text format is extended. For consistency with the text format for
-shared memories, the optional `shared` keyword is placed after the limits.
+Similarly, the text format is extended:
 
 ```
-tabletype ::= it:index_type lim:limits sh:share rt:reftype => sh it lim rt
+tabletype ::= it:index_type lim:limits rt:reftype => unshared it lim rt
+            | '(' 'shared' it:index_type lim:limits rt:reftype ')' => shared it lim rt
 ```
 
 A `tabletype` is valid as shared only if its `reftype` is valid as shared.

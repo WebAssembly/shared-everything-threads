@@ -121,13 +121,13 @@ redefined to be an abbreviation of the new text format:
 
 ```
 memtype ::= it:index_type lim:limits => unshared it lim
-          | '(' 'shared' it:index_type lim:limits ') => shared it lim
+          | 'shared' it:index_type lim:limits => shared it lim
 
 '(' 'memory' id? index_type limits 'shared' ')'
-  == '(' 'memory' id?  '(' 'shared' index_type limits ')' ')'
+  == '(' 'memory' id? 'shared' index_type limits ')'
 
 '(' 'memory' id? '(' 'import' name1 name2 ')' index_type limits 'shared' ')'
-  == '(' 'memory' id? '(' 'import' name1 name2 ')' '(' 'shared' index_type limits ')' ')'
+  == '(' 'memory' id? '(' 'import' name1 name2 ')' 'shared' index_type limits ')'
 ```
 
 #### Tables
@@ -142,7 +142,7 @@ Similarly, the text format is extended:
 
 ```
 tabletype ::= it:index_type lim:limits rt:reftype => unshared it lim rt
-            | '(' 'shared' it:index_type lim:limits rt:reftype ')' => shared it lim rt
+            | 'shared' it:index_type lim:limits rt:reftype => shared it lim rt
 ```
 
 A `tabletype` is valid as shared only if its `reftype` is valid as shared.

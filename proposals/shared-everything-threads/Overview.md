@@ -116,18 +116,15 @@ meaning `shared` or `unshared` introduced in the shared memory proposal.
 
 Shared memories have already been standardized.
 
-For consistency with other shared annotations, the existing text format for shared memories is
-redefined to be an abbreviation of the new text format:
+For consistency with other shared annotations in which `shared` comes first, the
+existing text format for shared memory types is redefined to be an abbreviation
+of the new text format:
 
 ```
 memtype ::= it:index_type lim:limits => unshared it lim
           | 'shared' it:index_type lim:limits => shared it lim
 
-'(' 'memory' id? index_type limits 'shared' ')'
-  == '(' 'memory' id? 'shared' index_type limits ')'
-
-'(' 'memory' id? '(' 'import' name1 name2 ')' index_type limits 'shared' ')'
-  == '(' 'memory' id? '(' 'import' name1 name2 ')' 'shared' index_type limits ')'
+index_type limits 'shared'  == 'shared' index_type limits
 ```
 
 #### Tables

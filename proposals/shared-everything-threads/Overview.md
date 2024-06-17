@@ -116,12 +116,30 @@ meaning `shared` or `unshared` introduced in the shared memory proposal.
 
 Shared memories have already been standardized.
 
-#### Tables
-
-The syntax of `tabletype` is extended:
+For consistency with other shared annotations in which `shared` comes first, the
+existing text format for shared memory types is redefined to be an abbreviation
+of the new text format:
 
 ```
-tabletype ::= share limits reftype
+memtype ::= it:index_type lim:limits => unshared it lim
+          | 'shared' it:index_type lim:limits => shared it lim
+
+index_type limits 'shared'  == 'shared' index_type limits
+```
+
+#### Tables
+
+The abstract syntax of `tabletype` is extended:
+
+```
+tabletype ::= share index_type limits reftype
+```
+
+Similarly, the text format is extended:
+
+```
+tabletype ::= it:index_type lim:limits rt:reftype => unshared it lim rt
+            | 'shared' it:index_type lim:limits rt:reftype => shared it lim rt
 ```
 
 A `tabletype` is valid as shared only if its `reftype` is valid as shared.
@@ -141,6 +159,15 @@ The syntax of `globaltype` is extended:
 
 ```
 globaltype ::= share mut valtype
+```
+
+Similarly, the text format is extended:
+
+```
+globaltype ::= t:valuetype => unshared const t
+             | '(' 'mut' t:valuetype ')' => unshared var t
+             | '(' 'shared' t:valuetype ')' => shared const t
+             | '(' 'shared '(' 'mut' t:valuetype ')' ')' => shared var t
 ```
 
 A `globaltype` is valid as shared only if its `valtype` is valid as shared.
@@ -166,12 +193,7 @@ shared. An instruction sequence validates as shared if each instruction in the s
 shared. An instruction validates as shared if its instruction type validates as shared, which is the
 case if each of its input and output value types validates as shared.
 
-To capture sharedness for imported and exported functions, as well as to facilitate the validation
-of instructions as shared, the structure of `functype` is extended:
-
-```
-functype ::= share resulttype -> resulttype
-```
+The sharedness of function types is described below along with the sharedness of other `comptype`s.
 
 > Note: If this validation turns out to be too strict to be usable, we may relax the validation of
 > functions to allow the locals and intermediate types in the body of shared functions to validate
@@ -189,12 +211,26 @@ used everywhere `absheaptype` is used today. This extension allows for e.g. `(sh
 shareabsheaptype ::= share absheaptype
 ```
 
+The text format is extended:
+
+```
+shareabsheaptype ::= ht:absheaptype => unshared ht
+                   | '(' 'shared' ht:absheaptype ')' => shared ht
+```
+
 Similarly, the syntax of `comptype` (composite type) is extended to make `sharecomptype`, which will
-be used everywhere `comptype` is used today. This allows for declaring e.g. `(func shared ...` or
-`(struct shared ...` types.
+be used everywhere `comptype` is used today. This allows for declaring e.g. `(shared (func ...))` or
+`(shared (struct ...))` types.
 
 ```
 sharecomptype ::= share comptype
+```
+
+The text format is extended:
+
+```
+sharecompttype ::= ct:comptype => unshared ct
+                 | '(' 'shared' ct:comptype ')' => shared ct
 ```
 
 The validation judgments for all kinds of types are parameterized by `share`. In general, the
@@ -214,6 +250,11 @@ abstract types mirrors the subtype relationships among unshared abstract types.
 > without needing to have a separate `shared` variant? This seems like it would be ok, except we
 > would still need a shared version to interoperate with `(shared eq)`
 
+#### Reference Types
+
+Since heap types already include sharedness, reference types do not need their own additional shared
+annotations.
+
 #### Element Segments
 
 The syntax of `elem` is extended to refer to a new `elemtype` that says whether or not an element
@@ -222,6 +263,14 @@ segment is shared.
 ```
 elemtype ::= share reftype
 elem ::= {type elemtype, init vec(expr), mode elemmode}
+```
+
+The text format is extended:
+
+```
+elemtype ::= t:reftype => unshared t
+           | '(' 'shared' t:reftype ')' => shared t
+elemlist ::= et:elemtype y*:vec(elemexpr) => (type et, init y*)
 ```
 
 An element segment is valid as shared only if its reftype is valid as shared. Instructions that
@@ -242,6 +291,16 @@ datatype ::= share
 data ::= {type datatype, init vec(byte), mode datamode}
 ```
 
+The text format is extended:
+
+```
+data ::= '(' 'data' id? share b*:datastring ')' => {type share, init b*, mode passive}
+       | '(' 'data' id? x:memuse '(' 'offset' e:expr ')' share b*:datastring ')'
+           => {type share, init b*, mode active {memory x, offset e}}
+share ::= eps => unshared
+        | 'shared' => shared
+```
+
 Instructions that refer to data segments (e.g. `data.drop`) are only valid as shared if their data
 segment is shared.
 
@@ -254,7 +313,7 @@ segment is shared.
 
 The syntax of tags does not need to be extended. They are shared iff their function types are
 shared. Shared tags are used to throw and catch `(shared exnref)`. Instructions that reference tags
-(e.g. `throw` and `catch`) only validate as shared if all the tags they reference are shared.
+(e.g. `throw` and `try_table`) only validate as shared if all the tags they reference are shared.
 
 > TODO: We need to determine how sharing affects exception handling. We may want to add
 > `catch_all_shared_ref`. We may want `(shared exnref) <: exnref` so `catch_all_ref` can continue to

@@ -744,11 +744,21 @@ sharecomptype ::= 0x65 ct:comptype => (shared ct) | ct:comptype => (unshared ct)
 
 #### Instructions
 
-`ref.eq` typing is expanded to allow either of its arguments to be shared eqref. To allow this, our
-principal type rule is amended to allow unconstrained sharedness metavariables, just like it allows
-unconstrained nullability metavariables. In general, all instructions that operate on unshared
-references are allowed to operate on shared references as well. `array.len` and `i31.get_u` are
-other examples.
+Several existing instructions need to be updated to accept references to shared heap types in
+addition to the references to unshared heap types they already accept. To allow this flexibility,
+our principal type rule is amended to allow unconstrained sharedness metavariables, just like it
+allows unconstrained nullability metavariables. In general, all instructions that operate on
+references to unshared heap types are allowed to operate on references to shared heap types as well.
+
+This is the full list of instructions that need to be updated to accept references to shared heap
+types by way of an unconstrained sharedness metavariable:
+
+ - `any.convert_extern`
+ - `extern.convert_any`
+ - `ref.eq` (the sharedness of both operands must match)
+ - `i31.get_s`
+ - `i31.get_u`
+ - `array.len`
 
 Most instructions that create reference values (e.g. `struct.new`, `ref.func`, `ref.null`) do not
 need new versions for allocating shared references because their type annotation immediates

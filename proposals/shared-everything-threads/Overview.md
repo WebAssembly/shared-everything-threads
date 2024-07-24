@@ -708,17 +708,37 @@ realm-local prototype will have `wait`, `notify`, and `waitAsync` methods.
 #### Memory orderings
 
 Just as the multi-memory proposal uses bit 6 of the `memarg` on memory access instructions to
-signify that a memory index follows, we will reserve bits 4-5 to encode the memory ordering
-(although we only use bit 4 in this proposal). For backward compatibility with the shared memory
-proposal, 0b00 will encode sequentially consistent ordering. 0b01 will encode release-acquire
-ordering. For memargs on non-atomic operations, the bits are not interpreted and must be 0b00. This
-scheme allows encoding alignments of up to 32768 bytes using bits 0-3, so there is no danger that we
-will need the newly reserved bits for alignment in the future, especially for atomic accesses.
+signify that a memory index follows, we reserve bit 5 to signify that an ordering immediate follows.
+For backward compatibility, if bit 5 is not set, the instruction uses `seqcst` ordering for all
+loads and stores it executes. If a memory index immediate is also present, the ordering immediate
+follows it.
 
-The new instructions below do not have memarg immediates because they do not operate on memories.
-They instead have `u32:ordering` immediates, which are 0 for sequentially-consistent ordering or 1
-for release-acquire ordering. `atomic.fence` already has a reserved zero byte immediate, which we
-now interpret as a u32:ordering immediate, allowing us to express release-acquire fences as well.
+Ordering immediates are encoded as `u8`s. Read-modify-write operations require two orderings: one
+for the read and one for the write. For RMWs, the low four bits of the `u8` encode the read ordering
+and the high four bits encode the write ordering. For other atomic operations, the low four bits
+encode the ordering and the high four bits must be 0.
+
+| ordering  | encoding |
+|-----------|----------|
+| `seqcst`  | `0b0000` |
+| `acqrel`  | `0b0001` |
+
+Reads with the `acqrel` ordering are acquire reads and writes with the `acqrel` ordering are release
+writes. Fences with the `acqrel` ordering are full acquire-release fences.
+
+> Note: We may want to add separate `acquire` and `release` orderings to express weaker fences.
+
+RMW operations take two ordering immediates, but these immediates must match, i.e. an RMW op can
+only have two `seqcst` orderings or two `acqrel` orderings. This restriction may be relaxed in the
+future.
+
+> Note: We may also want to give cmpxchg a third ordering, since some compilation schemes are able
+> to give its read different orderings depending on whether it succeeds or fails.
+
+The new instructions below do not have memarg immediates because they do not operate on memories, so
+they unconditionally take `u8` ordering immediates. `atomic.fence` already has a reserved zero byte
+immediate, which we now interpret as a `u8` ordering immediate, allowing us to express fences with
+different orderings as well.
 
 #### Types
 
@@ -772,41 +792,41 @@ In addition, the following instructions are introduced:
 | Instructions | opcode | notes |
 | ------------ | ------ | ----- |
 | `pause` | 0xFE 0x04 | |
-| `global.atomic.get <u32:ordering> <globalidx>` | 0xFE 0x4F | valid for i32, i64, and <: anyref globals. |
-| `global.atomic.set <u32:ordering> <globalidx>` | 0xFE 0x50 | valid for i32, i64, and <: anyref globals. |
-| `global.atomic.rmw.add <u32:ordering> <globalidx>` | 0xFE 0x51 | valid for i32 and i64 globals. |
-| `global.atomic.rmw.sub <u32:ordering> <globalidx>` | 0xFE 0x52 | valid for i32 and i64 globals. |
-| `global.atomic.rmw.and <u32:ordering> <globalidx>` | 0xFE 0x53 | valid for i32 and i64 globals. |
-| `global.atomic.rmw.or <u32:ordering> <globalidx>` | 0xFE 0x54 | valid for i32 and i64 globals. |
-| `global.atomic.rmw.xor <u32:ordering> <globalidx>` | 0xFE 0x55 | valid for i32 and i64 globals. |
-| `global.atomic.rmw.xchg <u32:ordering> <globalidx>` | 0xFE 0x56 | valid for i32, i64, and <: anyref globals. |
-| `global.atomic.rmw.cmpxchg <u32:ordering> <globalidx>` | 0xFE 0x57 | valid for i32, i64, and <: eqref globals. |
-| `table.atomic.get <u32:ordering> <tableidx>` | 0xFE 0x58 | valid for <: anyref tables. |
-| `table.atomic.set <u32:ordering> <tableidx>` | 0xFE 0x59 | valid for <: anyref tables. |
-| `table.atomic.rmw.xchg <u32:ordering> <tableidx>` | 0xFE 0x5A | valid for <: anyref tables. |
-| `table.atomic.rmw.cmpxchg <u32:ordering> <tableidx>` | 0xFE 0x5B | valid for <: eqref tables. |
-| `struct.atomic.get <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5C | valid for i32, i64, and <: anyref fields. |
-| `struct.atomic.get_s <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5D | valid for i8 and i16 fields. |
-| `struct.atomic.get_u <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5E | valid for i8 and i16 fields. |
-| `struct.atomic.set <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x5F | valid for i8, i16, i32, i64, and <: anyref fields. |
-| `struct.atomic.rmw.add <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x60 | valid for i32 and i64 fields. |
-| `struct.atomic.rmw.sub <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x61 | valid for i32 and i64 fields. |
-| `struct.atomic.rmw.and <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i32 and i64 fields. |
-| `struct.atomic.rmw.or <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x63 | valid for i32 and i64 fields. |
-| `struct.atomic.rmw.xor <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x64 | valid for i32 and i64 fields. |
-| `struct.atomic.rmw.xchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x65 | valid for i32, i64, and <: anyref fields. |
-| `struct.atomic.rmw.cmpxchg <u32:ordering> <typeidx> <fieldidx>` | 0xFE 0x66 | valid for i32, i64, and <: eqref fields. |
-| `array.atomic.get <u32:ordering> <typeidx>` | 0xFE 0x67 | valid for i32, i64, and <: anyref arrays. |
-| `array.atomic.get_s <u32:ordering> <typeidx>` | 0xFE 0x68 | valid for i8 and i16 arrays. |
-| `array.atomic.get_u <u32:ordering> <typeidx>` | 0xFE 0x69 | valid for i8 and i16 arrays. |
-| `array.atomic.set <u32:ordering> <typeidx>` | 0xFE 0x6A | valid for i8, i16, i32, i64, and <: anyref arrays. |
-| `array.atomic.rmw.add <u32:ordering> <typeidx>` | 0xFE 0x6B | valid for i32 and i64 arrays. |
-| `array.atomic.rmw.sub <u32:ordering> <typeidx>` | 0xFE 0x6C | valid for i32 and i64 arrays. |
-| `array.atomic.rmw.and <u32:ordering> <typeidx>` | 0xFE 0x6D | valid for i32 and i64 arrays. |
-| `array.atomic.rmw.or <u32:ordering> <typeidx>` | 0xFE 0x6E | valid for i32 and i64 arrays. |
-| `array.atomic.rmw.xor <u32:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
-| `array.atomic.rmw.xchg <u32:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64, and <: anyref arrays. |
-| `array.atomic.rmw.cmpxchg <u32:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and <: eqref arrays. |
+| `global.atomic.get <u8:ordering> <globalidx>` | 0xFE 0x4F | valid for i32, i64, and <: anyref globals. |
+| `global.atomic.set <u8:ordering> <globalidx>` | 0xFE 0x50 | valid for i32, i64, and <: anyref globals. |
+| `global.atomic.rmw.add <u8:ordering> <globalidx>` | 0xFE 0x51 | valid for i32 and i64 globals. |
+| `global.atomic.rmw.sub <u8:ordering> <globalidx>` | 0xFE 0x52 | valid for i32 and i64 globals. |
+| `global.atomic.rmw.and <u8:ordering> <globalidx>` | 0xFE 0x53 | valid for i32 and i64 globals. |
+| `global.atomic.rmw.or <u8:ordering> <globalidx>` | 0xFE 0x54 | valid for i32 and i64 globals. |
+| `global.atomic.rmw.xor <u8:ordering> <globalidx>` | 0xFE 0x55 | valid for i32 and i64 globals. |
+| `global.atomic.rmw.xchg <u8:ordering> <globalidx>` | 0xFE 0x56 | valid for i32, i64, and <: anyref globals. |
+| `global.atomic.rmw.cmpxchg <u8:ordering> <globalidx>` | 0xFE 0x57 | valid for i32, i64, and <: eqref globals. |
+| `table.atomic.get <u8:ordering> <tableidx>` | 0xFE 0x58 | valid for <: anyref tables. |
+| `table.atomic.set <u8:ordering> <tableidx>` | 0xFE 0x59 | valid for <: anyref tables. |
+| `table.atomic.rmw.xchg <u8:ordering> <tableidx>` | 0xFE 0x5A | valid for <: anyref tables. |
+| `table.atomic.rmw.cmpxchg <u8:ordering> <tableidx>` | 0xFE 0x5B | valid for <: eqref tables. |
+| `struct.atomic.get <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x5C | valid for i32, i64, and <: anyref fields. |
+| `struct.atomic.get_s <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x5D | valid for i8 and i16 fields. |
+| `struct.atomic.get_u <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x5E | valid for i8 and i16 fields. |
+| `struct.atomic.set <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x5F | valid for i8, i16, i32, i64, and <: anyref fields. |
+| `struct.atomic.rmw.add <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x60 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.sub <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x61 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.and <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x62 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.or <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x63 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.xor <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x64 | valid for i32 and i64 fields. |
+| `struct.atomic.rmw.xchg <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x65 | valid for i32, i64, and <: anyref fields. |
+| `struct.atomic.rmw.cmpxchg <u8:ordering> <typeidx> <fieldidx>` | 0xFE 0x66 | valid for i32, i64, and <: eqref fields. |
+| `array.atomic.get <u8:ordering> <typeidx>` | 0xFE 0x67 | valid for i32, i64, and <: anyref arrays. |
+| `array.atomic.get_s <u8:ordering> <typeidx>` | 0xFE 0x68 | valid for i8 and i16 arrays. |
+| `array.atomic.get_u <u8:ordering> <typeidx>` | 0xFE 0x69 | valid for i8 and i16 arrays. |
+| `array.atomic.set <u8:ordering> <typeidx>` | 0xFE 0x6A | valid for i8, i16, i32, i64, and <: anyref arrays. |
+| `array.atomic.rmw.add <u8:ordering> <typeidx>` | 0xFE 0x6B | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.sub <u8:ordering> <typeidx>` | 0xFE 0x6C | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.and <u8:ordering> <typeidx>` | 0xFE 0x6D | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.or <u8:ordering> <typeidx>` | 0xFE 0x6E | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.xor <u8:ordering> <typeidx>` | 0xFE 0x6F | valid for i32 and i64 arrays. |
+| `array.atomic.rmw.xchg <u8:ordering> <typeidx>` | 0xFE 0x70 | valid for i32, i64, and <: anyref arrays. |
+| `array.atomic.rmw.cmpxchg <u8:ordering> <typeidx>` | 0xFE 0x71 | valid for i32, i64, and <: eqref arrays. |
 | `ref.i31_shared` | 0xFB 0x1F | |
 
 Atomic accesses to references are deliberately restricted to anyref, shared anyref, and their

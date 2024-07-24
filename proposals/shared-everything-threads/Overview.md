@@ -724,7 +724,7 @@ encode the ordering and the high four bits must be 0.
 | `acqrel`  | `0b0001` |
 
 Reads with the `acqrel` ordering are acquire reads and writes with the `acqrel` ordering are release
-writes. Fences with the `acqrel` ordering a full acquire-release fences.
+writes. Fences with the `acqrel` ordering are full acquire-release fences.
 
 > Note: We may want to add separate `acquire` and `release` orderings to express weaker fences.
 
@@ -737,8 +737,8 @@ future.
 
 The new instructions below do not have memarg immediates because they do not operate on memories, so
 they unconditionally take `u8` ordering immediates. `atomic.fence` already has a reserved zero byte
-immediate, which we now interpret as a `u8` ordering immediate, allowing us to express `acquire`,
-`release`, and `acquire-release` fences as well.
+immediate, which we now interpret as a `u8` ordering immediate, allowing us to express fences with
+different orderings as well.
 
 #### Types
 

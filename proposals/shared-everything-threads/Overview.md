@@ -721,13 +721,19 @@ encode the ordering and the high four bits must be 0.
 | ordering  | encoding |
 |-----------|----------|
 | `seqcst`  | `0b0000` |
-| `acquire` | `0b0001` |
-| `release` | `0b0010` |
-| `acqrel`  | `0b0011` |
+| `acqrel`  | `0b0001` |
 
-Read orderings can never be `release` and write orderings can never be `acquire`. Only fences can
-use `acqrel` ordering. Furthermore, RMW operations may only have two `seqcst` orderings or a pair of
-`acquire` and a `release` orderings. The restriction on RMW orderings may be relaxed in the future.
+Reads with the `acqrel` ordering are acquire reads and writes with the `acqrel` ordering are release
+writes. Fences with the `acqrel` ordering a full acquire-release fences.
+
+> Note: We may want to add separate `acquire` and `release` orderings to express weaker fences.
+
+RMW operations take two ordering immediates, but these immediates must match, i.e. an RMW op can
+only have two `seqcst` orderings or two `acqrel` orderings. This restriction may be relaxed in the
+future.
+
+> Note: We may also want to give cmpxchg a third ordering, since some compilation schemes are able
+> to give its read different orderings depending on whether it succeeds or fails.
 
 The new instructions below do not have memarg immediates because they do not operate on memories, so
 they unconditionally take `u8` ordering immediates. `atomic.fence` already has a reserved zero byte

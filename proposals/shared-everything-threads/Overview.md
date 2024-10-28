@@ -766,16 +766,22 @@ sharecomptype ::= 0x65 ct:comptype => (shared ct) | ct:comptype => (unshared ct)
 
 Several existing instructions need to be updated to accept references to shared heap types in
 addition to the references to unshared heap types they already accept. To allow this flexibility,
-our principal type rule is amended to allow unconstrained sharedness metavariables, just like it
-allows unconstrained nullability metavariables. In general, all instructions that operate on
-references to unshared heap types are allowed to operate on references to shared heap types as well.
+while still allowing instructions to have principal (i.e. unique most specific) types, we introduce
+a bottom shareability, `bot-share`, that is only used for validation purposes. This is analogous the
+use bottom heap type that is already used only for validation purposes.
 
-This is the full list of instructions that need to be updated to accept references to shared heap
-types by way of an unconstrained sharedness metavariable:
+`bot-share` is a subtype of both `shared` and `unshared`, so for example `(ref null (bot-share
+any))` is a subtype of both `anyref` and `(ref null (shared any))`. An instruction whose principle
+type receives `(ref null (bot-share any))` as input can operate on both shared any unshared
+references.
+
+This is the full list of instructions that need to be updated to accept references to `bot-share`
+heap types to allow them to be polymorphic over shared and unshared references.
 
  - `any.convert_extern`
  - `extern.convert_any`
- - `ref.eq` (the sharedness of both operands must match)
+ - `ref.eq` (Mixed-sharedness comparisons are allowed because each operand is independently a
+   subtype of `(ref null (bot-share eq))`, but they are trivially false)
  - `i31.get_s`
  - `i31.get_u`
  - `array.len`

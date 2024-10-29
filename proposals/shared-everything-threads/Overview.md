@@ -766,22 +766,16 @@ sharecomptype ::= 0x65 ct:comptype => (shared ct) | ct:comptype => (unshared ct)
 
 Several existing instructions need to be updated to accept references to shared heap types in
 addition to the references to unshared heap types they already accept. To allow this flexibility,
-while still allowing instructions to have principal (i.e. unique most specific) types, we introduce
-a bottom shareability, `bot-share`, that is only used for validation purposes. This is analogous the
-use bottom heap type that is already used only for validation purposes.
+our principal type rule is amended to allow unconstrained sharedness metavariables, just like it
+allows unconstrained nullability metavariables. In general, all instructions that operate on
+references to unshared heap types are allowed to operate on references to shared heap types as well.
 
-`bot-share` is a subtype of both `shared` and `unshared`, so for example `(ref null (bot-share
-any))` is a subtype of both `anyref` and `(ref null (shared any))`. An instruction whose principle
-type receives `(ref null (bot-share any))` as input can operate on both shared any unshared
-references.
-
-This is the full list of instructions that need to be updated to accept references to `bot-share`
-heap types to allow them to be polymorphic over shared and unshared references.
+This is the full list of instructions that need to be updated to accept references to shared heap
+types by way of an unconstrained sharedness metavariable:
 
  - `any.convert_extern`
  - `extern.convert_any`
- - `ref.eq` (Mixed-sharedness comparisons are allowed because each operand is independently a
-   subtype of `(ref null (bot-share eq))`, but they are trivially false)
+ - `ref.eq` (the sharedness of both operands must match)
  - `i31.get_s`
  - `i31.get_u`
  - `array.len`
@@ -792,6 +786,13 @@ determine whether the reference will be shared or not. In the case of `ref.func`
 be shared if and only if the referred-to function is shared. An exception is `ref.i31`, which takes
 no immediate that can determine the sharedness of the result. We therefore need a new
 `ref.i31_shared` instruction as well.
+
+To maintain the forward principal types property, we additionally need to introduce a bottom
+sharedness, `bot-share`, that is used only during validation. This is analogous to the bottom heap
+type also used during validation. `bot-share` is a subtype of both `shared` and `unshared`, so for
+example `(ref null (bot-share any))` is a subtype of both `anyref` and `(ref null (shared any))`.
+Popping a reference from an empty, unreachable stack produces a value of type `(ref (bot-share
+bot))`. A subsequent `any.convert_extern`, for example, would then push a `(ref (bot-share any))`.
 
 In addition, the following instructions are introduced:
 

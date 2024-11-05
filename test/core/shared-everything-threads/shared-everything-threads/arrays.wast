@@ -121,7 +121,6 @@
   (type $funcs (shared (array (mut (ref null (shared func))))))
 
   (data)
-  ;; See https://github.com/bytecodealliance/wasm-tools/issues/1717.
   (elem (ref null (shared func)))
 
   (func (array.get_s $i8 (ref.null (shared none)) (i32.const 0)) (drop))

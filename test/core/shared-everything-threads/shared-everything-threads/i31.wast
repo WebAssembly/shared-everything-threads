@@ -14,7 +14,7 @@
     (i31.get_u (ref.null (shared i31)))
   )
   (func (export "get_s-null") (result i32)
-    (i31.get_u (ref.null (shared i31)))
+    (i31.get_s (ref.null (shared i31)))
   )
 
   (global $i (ref (shared i31)) (ref.i31_shared (i32.const 2)))

@@ -27,7 +27,7 @@
     (type (shared (array i8)))
     (type (array i8))
 
-    (global (ref 1) (array.new 0))
+    (global (ref 1) (array.new_default 0 (i32.const 1)))
   )
   "type mismatch"
 )

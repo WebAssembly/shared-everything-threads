@@ -787,6 +787,13 @@ be shared if and only if the referred-to function is shared. An exception is `re
 no immediate that can determine the sharedness of the result. We therefore need a new
 `ref.i31_shared` instruction as well.
 
+To maintain the forward principal types property, we additionally need to introduce a bottom
+sharedness, `bot-share`, that is used only during validation. This is analogous to the bottom heap
+type also used during validation. `bot-share` is a subtype of both `shared` and `unshared`, so for
+example `(ref null (bot-share any))` is a subtype of both `anyref` and `(ref null (shared any))`.
+Popping a reference from an empty, unreachable stack produces a value of type `(ref (bot-share
+bot))`. A subsequent `any.convert_extern`, for example, would then push a `(ref (bot-share any))`.
+
 In addition, the following instructions are introduced:
 
 | Instructions | opcode | notes |

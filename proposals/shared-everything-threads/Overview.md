@@ -543,6 +543,20 @@ arrays, and any other location cannot be observed, even by other threads. This r
 like a release barrier between when a new allocation is initialized and when its address is made
 available to the program.
 
+For consistency with existing rules about tearing accesses to shared linear memory, accesses to
+shared globals, structs, and arrays follow these rules about when tearing is allowed:
+
+ - Atomic accesses never tear.
+
+ - Accesses to reference-typed fields and globals never tear. (It would be unsafe to allow such
+   accesses to tear.)
+
+ - Accesses to i8, i16, and i32 fields and globals never tear. (For linear memory, such accesses are
+   only tear-free if they are aligned, but all struct, array, and global accesses are assumed to be
+   a aligned.)
+
+ - All other accesses can tear.
+
 [release-acquire]: https://en.cppreference.com/w/cpp/atomic/memory_order#Release-Acquire_ordering
 
 ### JS API

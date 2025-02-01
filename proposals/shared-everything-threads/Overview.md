@@ -863,7 +863,7 @@ struct.atomic.rmw.add typeidx fieldidx
 
 C |- struct.atomic.rmw.add x y : [(ref null x) t] -> [t]
  - C.types[x] = struct fields
- - fields[i] = mut t
+ - fields[y] = mut t
  - t = i32 \/ t = i64 \/ (C |- t <: anyref) \/ (C |- t <: (ref null (shared any))
 ```
 
@@ -875,7 +875,7 @@ struct.atomic.rmw.cmpxchg typeidx fieldidx
 
 C |- struct.atomic.rmw.cmpxchg x y : [(ref null x) t1 t2] -> [t2]
  - C.types[x] = struct fields
- - fields[i] = mut t2
+ - fields[y] = mut t2
  - (t2 = i32 /\ t1 = i32) \/
    (t2 = i64 /\ t1 = i64) \/
    ((C |- t2 <: eqref) /\ t1 = eqref) \/

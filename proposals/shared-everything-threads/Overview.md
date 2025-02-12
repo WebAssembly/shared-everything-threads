@@ -855,6 +855,33 @@ subtypes because other references (e.g. funcref and externref) may have arbitrar
 representations that do not allow for efficient atomic accesses on the underlying hardware. Engines
 still must ensure that non-atomic accesses to any reference do not tear.
 
+The operands of RMW instructions are typed the same as operands to the corresponding `set`
+instructions. For example, the typing of `struct.atomic.rmw.xchg` is as follows:
+
+```
+struct.atomic.rmw.add typeidx fieldidx
+
+C |- struct.atomic.rmw.add x y : [(ref null x) t] -> [t]
+ - C.types[x] = struct fields
+ - fields[y] = mut t
+ - t = i32 \/ t = i64 \/ (C |- t <: anyref) \/ (C |- t <: (ref null (shared any))
+```
+
+Cmpxchg operations take an additional operand for the expected value. Its type may be a supertype of
+the field type, as long as it is still equality-comparable. For example:
+
+```
+struct.atomic.rmw.cmpxchg typeidx fieldidx
+
+C |- struct.atomic.rmw.cmpxchg x y : [(ref null x) t1 t2] -> [t2]
+ - C.types[x] = struct fields
+ - fields[y] = mut t2
+ - (t2 = i32 /\ t1 = i32) \/
+   (t2 = i64 /\ t1 = i64) \/
+   ((C |- t2 <: eqref) /\ t1 = eqref) \/
+   ((C |- t2 <: (ref null (shared eq))) /\ t1 = (ref null (shared eq)))
+```
+
 > Note: Should we allow atomic arithmetic on i8 and i16 fields? Should we allow arithmetic on i31ref
 > fields and table slots?
 

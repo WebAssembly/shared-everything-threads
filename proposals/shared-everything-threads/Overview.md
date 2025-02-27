@@ -400,65 +400,36 @@ will never be accessed.
 ### Thread Management Builtins
 
 Standalone WebAssembly engines (i.e., non-browser) do not have web workers as a parallel primitive.
-For these environments, we propose to modify the [component model] by adding the following builtins
-to allow creating and managing threads:
+For these environments, we propose to modify the [component model] by adding the following
+canonical builtins to allow creating and managing threads:
 
-```
-canon ::= ...
-          | (canon thread.spawn <typeidx> (core func <id>?))
-          | (canon thread.hw_concurrency (core func <id>?))
-```
+- [`thread.spawn_ref`]: spawns a thread using a function reference; the need for `funcref`-spawning
+  is discussed [here][static-function-discussion]. We eventually expect thread entry points to take
+  arbitrary parameters but this is initially limited to a single concrete type `[i32] -> []`
+  ([discussion][function-type-discussion]).
 
-These new builtins would join the short list of current [canonical builtins]: `lift`, `lower`, and
-`resource.*` management. The new `thread.*` builtins have as a goal to be polyfillable on the web.
+- [`thread.spawn_indirect`]: spawns a thread using a function reference stored in a table; the need
+  for this is discussed [here][spawn-indirect-discussion].
+
+- [`thread.available_parallelism`]: Returns the number of threads the engine may allow to execute in
+  parallel. This builtin has fingerprinting potential, but (1) no more than the [widely available],
+  analogous browser property &mdash; [`hardwareConcurrency`] &mdash;, (2) engines may limit or
+  randomize the returned value as a mitigation, and (3) this kind of fingerprinting is likely
+  possible anyways via careful timing of concurrently-executing threads
+  ([discussion][hw-concurrency-discussion]).
+
+All new `thread.*` builtins have as a goal to be polyfillable on the web.
 
 [canonical builtins]: https://github.com/WebAssembly/component-model/blob/main/design/mvp/Explainer.md#canonical-abi
-
-#### `thread.spawn`
-
-The `thread.spawn` built-in has type `[f: (ref null $f) n:i32 c:i32] -> []`, where `$f` is `(rec
-(type (sub final (func shared (param i32))))).0`: it invokes the function `f` `n` times, potentially
-in parallel, passing `c` to each invocation.
-
-The need to pass a function reference is discussed [here][static-function-discussion]. Note that,
-though the component model ABI does not allow passing `funcref`s, the canonical builtins have no
-such restriction.
-
-Ideally we would allow thread entry points to take arbitrary parameters, as discussed
-[here][function-type-discussion]. Until we get type parameters in core Wasm, however, that would
-require a name mangling scheme to describe the intended type of the import. It's unclear that there
-can be any satisfactory name mangling scheme that would handle arbitrary GC types. For now we avoid
-that complexity by using a single concrete type.
-
-[static-function-discussion]: https://github.com/WebAssembly/shared-everything-threads/discussions/10
 [function-type-discussion]: https://github.com/WebAssembly/shared-everything-threads/discussions/3
-
-#### `thread.hw_concurrency`
-
-Some algorithms need to detect the number of threads the underlying hardware can be expected to
-execute concurrently. The `thread.hw_concurrency` builtin has type `[] -> [i32]` and returns the
-number of threads the engine may allow to execute concurrently. An engine is not required to meet
-the concurrency level it returns, but not doing so could cause negative performance effects for
-users.
-
-This builtin has fingerprinting potential, which is a concern in some environments.
-`thread.hw_concurrency`, however, is designed to be a WebAssembly analogue of the browser
-[`hardwareConcurrency`] property, which is [widely available] and already exposes web users to
-fingerprinting. Note that:
-
-1. WebAssembly engines could choose to limit, randomize, or alter the value returned if privacy
-   concerns outweigh the performance benefit of allowing algorithms to fit to the hardware and
-2. this kind of fingerprinting is likely possible without the instruction via some careful timing of
-   shared access from concurrently-executing threads
-
-Though this functionality was considered non-essential in previous
-[discussions][hw-concurrency-discussion], those were in the context of browsers, with the
-[`hardwareConcurrency`] property available. We expect standalone engines to need some equivalent for
-general parallel programming.
-
 [`hardwareConcurrency`]: https://developer.mozilla.org/en-US/docs/Web/API/Navigator/hardwareConcurrency
-[widely available]: https://caniuse.com/?search=hardwareConcurrency
 [hw-concurrency-discussion]: https://github.com/abrown/thread-spawn/discussions/6
+[spawn-indirect-discussion]: https://github.com/WebAssembly/shared-everything-threads/issues/89
+[static-function-discussion]: https://github.com/WebAssembly/shared-everything-threads/discussions/10
+[`thread.spawn_ref`]: https://github.com/WebAssembly/component-model/blob/main/design/mvp/CanonicalABI.md#-canon-threadspawn_ref
+[`thread.spawn_indirect`]: https://github.com/WebAssembly/component-model/blob/main/design/mvp/CanonicalABI.md#-canon-threadspawn_indirect
+[`thread.available_parallelism`]: https://github.com/WebAssembly/component-model/blob/main/design/mvp/CanonicalABI.md#-canon-threadavailable_parallelism
+[widely available]: https://caniuse.com/?search=hardwareConcurrency
 
 ### Managed Waiter Queues
 

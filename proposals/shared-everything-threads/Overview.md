@@ -70,7 +70,7 @@ We expect the following changes to enable something like the following example (
 ```wat
 (module
   (type $unshared (func))
-  (type $shared (func shared))
+  (type $shared (shared (func)))
 
   ;; An imported shared function.
   (func $baz (import "env" "baz") (type $shared))
@@ -88,6 +88,7 @@ We expect the following changes to enable something like the following example (
   (func $bar (type $shared)
     call $baz
   )
+)
 ```
 
 ### `shared` Annotations

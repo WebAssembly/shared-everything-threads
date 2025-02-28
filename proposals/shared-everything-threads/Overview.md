@@ -86,7 +86,7 @@ We expect the following changes to enable something like the following example (
 
   ;; $bar cannot access the un-shared memory, but it can call the shared import $baz.
   (func $bar (type $shared)
-    call $baz ;; validation error!
+    call $baz
   )
 )
 ```

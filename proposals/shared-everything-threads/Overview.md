@@ -968,3 +968,21 @@ validation constraints on shared functions are intended to be future-compatible 
 continuation references.
 
 [stack-switching]: https://github.com/WebAssembly/stack-switching
+
+### What are the security considerations?
+
+Shared memory and atomic operations allow for the construction of high-resolution timers that
+can make side channel attacks such as [Spectre] more effective.
+However, these problems already exist with SharedArrayBuffers and shared WebAssembly memories.
+This proposal will use the same mitigations already used for SharedArrayBuffers:
+Just like `SharedArrayBuffer`s, shared WebAssembly objects will not be able to be sent to other
+threads via `postMessage` except in cross-origin isolated contexts.
+
+[Spectre]: https://en.wikipedia.org/wiki/Spectre_(security_vulnerability)
+
+### What are the privacy considerations?
+
+The same high-resolution timers mentioned above could in principle be used to measure the
+performance characteristics of a user's platform to generate fingerprinting data.
+As with the security considerations,
+there are no new risks that are not already present with SharedArrayBuffers.

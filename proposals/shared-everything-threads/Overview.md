@@ -192,7 +192,8 @@ syntax of functions does not need to be extended. If a function is shared, its l
 validate as shared. An expression validates as shared if its instruction sequence validates as
 shared. An instruction sequence validates as shared if each instruction in the sequence validates as
 shared. An instruction validates as shared if its instruction type validates as shared, which is the
-case if each of its input and output value types validates as shared.
+case if each of its input and output value types validates as shared and it only contains indices of
+globals, functions, tables, or memories that are themselves shared.
 
 The sharedness of function types is described below along with the sharedness of other `comptype`s.
 

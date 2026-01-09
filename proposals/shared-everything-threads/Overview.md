@@ -698,7 +698,8 @@ Just as the multi-memory proposal uses bit 6 of the `memarg` on memory access in
 signify that a memory index follows, we reserve bit 5 to signify that an ordering immediate follows.
 For backward compatibility, if bit 5 is not set, the instruction uses `seqcst` ordering for all
 loads and stores it executes. If a memory index immediate is also present, the ordering immediate
-follows it.
+follows it. It is a validation error if there is an ordering immediate present for any non-atomic
+instruction that uses a `memarg` (such as standard loads and stores).
 
 Ordering immediates are encoded as `u8`s. Read-modify-write operations require two orderings: one
 for the read and one for the write. For RMWs, the low four bits of the `u8` encode the read ordering

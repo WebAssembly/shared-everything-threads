@@ -722,6 +722,9 @@ future.
 > Note: We may also want to give cmpxchg a third ordering, since some compilation schemes are able
 > to give its read different orderings depending on whether it succeeds or fails.
 
+It is a validation error if any non-atomic instruction that uses a `memarg` (such as standard loads
+and stores) has the `acqrel` bit (bit 5) set.
+
 The new instructions below do not have memarg immediates because they do not operate on memories, so
 they unconditionally take `u8` ordering immediates. `atomic.fence` already has a reserved zero byte
 immediate, which we now interpret as a `u8` ordering immediate, allowing us to express fences with

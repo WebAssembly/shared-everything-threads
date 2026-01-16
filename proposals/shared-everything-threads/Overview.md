@@ -565,7 +565,7 @@ Waitqueue references are converted to `WebAssembly.WaitQueue` objects, described
 #### Shared String Builtins
 
 As mentioned above, JS strings will be able to be converted to `(ref extern)` or
-`(ref (shared extern)` when entering WebAssembly. To facilitate working with shared strings,
+`(ref (shared extern))` when entering WebAssembly. To facilitate working with shared strings,
 the [string builtins][string-builtins] will each be updated to be importable with two function types:
 the current function type using `extern` and a new function type that is equivalent except that 1) it
 is shared, and 2) uses `(shared extern)` in place of `extern` (and also shared versions of any other

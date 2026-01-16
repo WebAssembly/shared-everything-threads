@@ -572,6 +572,11 @@ is shared, and 2) uses `(shared extern)` in place of `extern` (and also shared v
 heap types, e.g. the array parameter in `fromCharCodeArray`). Mixing shared and unshared heap types
 in the same signature is not allowed.
 
+Similarly, imported string constants can also be shared. They are imported from the same configured
+`importedStringModule` as non-shared string constants, but are imported as globals with type
+`(ref (shared extern))` or `(ref null (shared extern))`. Notably, no spec changes are required for
+this to work once strings are allowed to enter Wasm as shared extern references.
+
 [string-builtins]: https://webassembly.github.io/spec/js-api/#builtins-js-string
 
 #### Shared Annotations

@@ -443,44 +443,91 @@ associated with a particular memory address. WasmGC programs using threads will 
 primitive that does not depend on linear memory. We propose adding a new abstract heap type
 `waitqueue` to serve as this new primitive.
 
-Unlike other abstract heap types, which are only ever subtypes of other abstract heap types (or are
-bottom types), `waitqueue` is a final subtype of `(rec (type (sub (struct shared (field (mut i32)))))).0`
-, meaning it is a struct with one visible `i32` field that can be accessed with all the standard
-struct accessors as well as the new atomic struct accessors. This field is the futex control field
-that is atomically checked when waiting on the waiter queue. `waitqueue` is also always shared.
-There is no non-shared version of it.
+For linear memory `wait` and `notify` operations, a single memory address serves as both the
+"control word" that is atomically checked before sleeping and the key that identifies the internal
+waiter queue that `notify` will operate on. For `waitqueue`, these roles are decoupled.
+The control word used for sleeping can be anywhere, and the `waitqueue` itself is the only handle
+needed by `notify`.
 
-> Note: Should we have a non-shared version of `waitqueue` just for orthogonality? The type would be
-> useless, but orthogonality would be helpful for optimizers.
+We introduce the following new types: `waitqueue`, `nowaitqueue`, `(shared waitqueue)`,
+and `(shared nowaitqueue)`. The unshared types are there to maintain orthogonality,
+but they are uninhabited. There is no way to create a value with type `(ref waitqueue)`,
+only `(ref (shared waitqueue))`.
 
-To wait on and notify a particular `waitqueueref`, there are two additional instructions:
+We introduce the following new instructions:
 
- - `waitqueue.wait: [waitqueueref, i32, i64] -> [i32]`
+`waitqueue.new` allocates a new waitqueues.
+```
+C |- waitqueue.new : [] -> [(ref (shared waitqueue))]
+```
 
-This instruction behaves just like `memory.atomic.wait32` and `memory.atomic.wait64`: the first
-operand is the wait queue to wait on, the `i32` operand is the expected value of
-the control field, and the `i64` operand is a relative timeout in nanoseconds. The return value is
-`0` when the wait succeeded and the current thread was woken up by a notify, `1` when the thread did
-not go to sleep because the control field did not have the expected value, or `2` because the
-timeout expired.
+`waitqueue.notify` takes a waitqueue and a count of waiters to wake. It returns the number of
+waiters actually woken.
+```
+C |- waitqueue.notify : [(ref null (shared waitqueue)) i32] -> [i32]
+```
 
-Like the existing linear memory wait instructions, `waitqueue.wait` disallows spurious wakeups.
+Like their linear memory counterparts, the `wait` operations take an expected value and a
+relative timeout in nanoseconds (where negative arguments are interpreted as meaning infinite timeout).
+The different `wait` operations correspond to different locations that can hold the control word,
+which is allowed to be an `i32`, `i64`, or any subtype of `(ref null (shared eq))`.
 
-> Note: We should perhaps revisit allowing spurious wakeups, since disallowing them makes various
-> kinds of interesting instrumentation impossible.
+```
+wait_expected(i32) = i32
+wait_expected(i64) = i64
+wait_expected(t) = (ref null (shared eq)) -- if t <: (ref null (shared eq))
+```
 
-- `waitqueue.notify: [waitqueueref, i32] -> [i32]`
+Each of the wait operations return 0 when notified, 1 when the expected and actual values did not match,
+and 2 on timeout.
 
-This instruction behaves just like `memory.atomic.notify`: The first operand is the wait queue to
-wait on and the `i32` operand is the maximum number of waiters to wake up. The result is the number
-of waiters that were actually woken up.
+As with the existing linear memory waits, waits on unshared locations or on the main browser thread are
+valid but will trap if executed, even if no wait would have occurred because the expected and actual
+values do not match.
 
-> Note: It may also be necessary to have versions of the waitqueue where the control field is an i64
-> or some subtype of shared eqref. This would allow more bits to be stored in the control word and
-> would allow construction of things like shared WasmGC queues. We should consider parameterizing
-> `waitqueue` and its operations with the control word type.
+> Note: It may be worth trying to relax the restriction on waiting on the main thread given that
+waiting would be strictly better than the busy waiting toolchains have been forced to use for the
+past 8+ years.
 
-Threads that are waiting indefinitely on a wait queue that is no longer reachable on threads that
+```
+C |- struct.wait x y : [(ref null x) (ref null (shared waitqueue)) t i64] -> [i32]
+ -- C.types[x] = shared? struct ft*
+ -- ft*[y] = mut? t'
+ -- t = wait_expected(t')
+
+C |- array.wait x : [(ref null x) (ref null (shared waitqueue)) i32 t i64] -> [i32]
+ -- C.types[x] = shared? array mut? t'
+ -- t = wait_expected(t')
+
+C |- global.wait x : [(ref null (shared waitqueue)) t i64] -> [i32]
+ -- C.globals[x] = shared? global mut? t'
+ -- t = wait_expected(t')
+
+C |- table.wait x : [(ref null (shared waitqueue)) i32 t i64] -> [i32]
+ -- C.tables[x] = shared? table t'
+ -- t = wait_expected(t')
+
+C |- memory.wait32 x : [(ref null (shared waitqueue)) t i32 i64] -> [i32]
+ -- C.memories[x] = shared? memory t
+
+C |- memory.wait64 x : [(ref null (shared waitqueue)) t i64 i64] -> [i32]
+ -- C.memories[x] = shared? memory t
+```
+
+As with the existing linear memory wait and notify instructions, the address of the
+control word passed to `memory.wait32` and `memory.wait64` must have natural alignment.
+
+> Note: The difference between `memory.wait32` and `memory.wait64` is whether the control
+word is an i32 or i64. The `t` parameter matches the index type of the accessed memory.
+
+For consistency with the existing wait and notify instructions, waitqueues guarantee
+ordered wakeup and disallow spurious wakeups.
+
+> Note: We should consider at least allowing spurious wakeups, since one of the goals of
+waitqueue is to have better performance than the existing primitives and it doesn't need
+to worry about consistency with JS like `memory.atomic.wait*` and `memory.atomic.notify` do.
+
+Threads that are waiting indefinitely on a waitqueue that is no longer reachable on threads that
 might possibly notify it are eligible to be garbage collected along with the wait queue itself. This
 may be observable if it causes finalizers registered in the host to be fired.
 

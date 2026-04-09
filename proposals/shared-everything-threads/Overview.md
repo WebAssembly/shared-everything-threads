@@ -468,7 +468,7 @@ C |- waitqueue.notify : [(ref null (shared waitqueue)) i32] -> [i32]
 ```
 
 Like their linear memory counterparts, the `wait` operations take an expected value and a
-relative timeout in nanoseconds (where negative arguments are interpreted as meaning infinite timeout).
+relative timeout in nanoseconds (interpreted as signed, where negative arguments mean infinite timeout).
 The different `wait` operations correspond to different locations that can hold the control word,
 which is allowed to be an `i32`, `i64`, or any subtype of `(ref null (shared eq))`.
 
@@ -503,22 +503,21 @@ C |- global.wait x : [(ref null (shared waitqueue)) t i64] -> [i32]
  -- C.globals[x] = shared? global mut? t'
  -- t = wait_expected(t')
 
-C |- table.wait x : [(ref null (shared waitqueue)) i32 t i64] -> [i32]
- -- C.tables[x] = shared? table t'
+C |- table.wait x : [(ref null (shared waitqueue)) at t i64] -> [i32]
+ -- C.tables[x] = shared? table at lim t'
  -- t = wait_expected(t')
 
-C |- memory.wait32 x : [(ref null (shared waitqueue)) t i32 i64] -> [i32]
- -- C.memories[x] = shared? memory t
+C |- memory.wait32 x : [(ref null (shared waitqueue)) at i32 i64] -> [i32]
+ -- C.memories[x] = shared? memory at lim
 
-C |- memory.wait64 x : [(ref null (shared waitqueue)) t i64 i64] -> [i32]
- -- C.memories[x] = shared? memory t
+C |- memory.wait64 x : [(ref null (shared waitqueue)) at i64 i64] -> [i32]
+ -- C.memories[x] = shared? memory at lim
 ```
 
-As with the existing linear memory wait and notify instructions, the address of the
-control word passed to `memory.wait32` and `memory.wait64` must have natural alignment.
-
-> Note: The difference between `memory.wait32` and `memory.wait64` is whether the control
-word is an i32 or i64. The `t` parameter matches the index type of the accessed memory.
+The difference between `memory.wait32` and `memory.wait64` is whether the control
+word is an i32 or i64. As with the existing linear memory wait and notify instructions,
+the address of the control word passed to `memory.wait32` and `memory.wait64` must have
+natural alignment, otherwise the operation will trap.
 
 For consistency with the existing wait and notify instructions, waitqueues guarantee
 ordered wakeup and disallow spurious wakeups.

@@ -478,6 +478,10 @@ wait_expected(i64) = i64
 wait_expected(t) = (ref null (shared eq)) -- if t <: (ref null (shared eq))
 ```
 
+> Note: Since the wait operations inspect and operate on the control words, this polymorphism violates
+the longstanding "no overloading" WebAssembly design principle. The CG needs to discuss how important
+this still is.
+
 Each of the wait operations return 0 when notified, 1 when the expected and actual values did not match,
 and 2 on timeout.
 

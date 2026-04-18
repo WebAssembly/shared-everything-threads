@@ -6,7 +6,7 @@
 
 ## Participate
 
- - TODO: Link to issue in https://github.com/webassembly/shared-everything-threads/
+ - [GitHub Discussion](https://github.com/WebAssembly/shared-everything-threads/discussions/112)
 
 ## Table of Contents
 

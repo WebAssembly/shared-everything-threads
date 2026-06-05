@@ -742,6 +742,8 @@ realm-local prototype will have `wait`, `notify`, and `waitAsync` methods.
 #### Memory orderings
 
 For atomic instructions on globals, tables, structs, and arrays, we utilize a `u8` ordering immediate.
+The encoding of this immediate matches the memory order encodings defined in the [Relaxed Atomics] proposal.
+
 Read-modify-write operations require two orderings: one for the read and one for the write. For RMWs,
 the low four bits of the `u8` encode the read ordering and the high four bits encode the write ordering.
 For other atomic operations, the low four bits encode the ordering and the high four bits must be 0.

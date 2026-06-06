@@ -12,7 +12,6 @@ specification:
   only shareable data can be shared between threads.
 - thread-local globals on which language runtimes can build their thread-local storage.
 - instructions for sequentially consistent and release-acquire accesses to shared WasmGC data.
-- instructions for release-acquire accesses to shared memory.
 - managed waiter queues for an efficient futex-like wait/notify mechanism usable with WasmGC.
 - [component model] builtins for thread lifecycle management.
 
@@ -37,8 +36,6 @@ The initial threads proposal was sufficient to implement threads for linear memo
 Web, but we need more functionality to improve performance for that use case and support other use
 cases at all. For example:
 
- - The only memory order currently supported by Wasm is sequential consistency, which has large
-   performance overheads.
  - The lack of shared tables makes dynamic loading extremely complicated and slow, even for
    languages that otherwise can already use threads.
  - There is no way to use threads with WasmGC programs at all because there is no way to share
@@ -536,30 +533,13 @@ may be observable if it causes finalizers registered in the host to be fired.
 
 [wait-notify]: https://github.com/WebAssembly/threads/blob/main/proposals/threads/Overview.md#wait-and-notify-operators
 
-### Spinlock Relaxation: `pause`
-
-Efficient lock implementations do not just use waiter queues; they also use bounded spinlocks. To
-improve the performance and power efficiency of these spinlocks, we introduce a `pause` instruction
-that is semantically a no-op, but is lowered to architecture-specific instructions like
-[`PAUSE`][pause]. This instruction was [discussed][threads-spinloop] on the original threads
-proposal, but did not make it into the spec at that point. There is also TC39
-[proposal][tc39-microwait] adding a higher-level version of this primitive to JS as
-`Atomics.microwait`.
-
-[pause]: https://www.felixcloutier.com/x86/pause.html
-[threads-spinloop]: https://github.com/WebAssembly/threads/issues/15
-[tc39-microwait]: https://github.com/tc39/proposal-atomics-microwait
-
 ### Memory Model Considerations
 
-To improve performance for linear memory languages using threading (e.g. C, C++, and Rust) and to
-make it feasible to compile languages targeting WasmGC that have stronger memory models (e.g. Java
-and OCaml), we introduce [release-acquire][release-acquire] ordering as an intermediate memory order
-that is stronger than unordered accesses and weaker than the sequentially-consistent memory order
-used by all existing WebAssembly atomics. As described [below][new-instructions], the choice of
-memory order can be encoded in a `memarg`, so all existing atomic instructions that take a `memarg`
-immediate will be able to be used with release-acquire ordering. For other atomic instructions, new
-encodings will be introduced to provide release-acquire variants.
+To make it feasible to compile languages targeting WasmGC that have stronger memory models (e.g. Java
+and OCaml), we support [release-acquire][release-acquire] ordering as defined in the [Relaxed Atomics]
+proposal. This ordering is used as an intermediate memory order that is stronger than unordered accesses
+and weaker than sequentially-consistent memory order. As described [below][new-instructions], new
+instructions are introduced to provide release-acquire variants for WasmGC data accesses.
 
 Implementations must take care to ensure that uninitialized data in shared tables, globals, structs,
 arrays, and any other location cannot be observed, even by other threads. This requires something
@@ -761,17 +741,14 @@ realm-local prototype will have `wait`, `notify`, and `waitAsync` methods.
 
 #### Memory orderings
 
-Just as the multi-memory proposal uses bit 6 of the `memarg` on memory access instructions to
-signify that a memory index follows, we reserve bit 5 to signify that an ordering immediate follows.
-For backward compatibility, if bit 5 is not set, the instruction uses `seqcst` ordering for all
-loads and stores it executes. If a memory index immediate is also present, the ordering immediate
-follows it. It is a validation error if there is an ordering immediate present for any non-atomic
-instruction that uses a `memarg` (such as standard loads and stores).
+For atomic instructions on globals, tables, structs, and arrays, we utilize a `u8` ordering immediate.
+The encoding of this immediate matches the memory order encodings defined in the [Relaxed Atomics] proposal.
 
-Ordering immediates are encoded as `u8`s. Read-modify-write operations require two orderings: one
-for the read and one for the write. For RMWs, the low four bits of the `u8` encode the read ordering
-and the high four bits encode the write ordering. For other atomic operations, the low four bits
-encode the ordering and the high four bits must be 0.
+Read-modify-write operations require two orderings: one for the read and one for the write. For RMWs,
+the low four bits of the `u8` encode the read ordering and the high four bits encode the write ordering.
+For other atomic operations, the low four bits encode the ordering and the high four bits must be 0.
+
+The ordering immediate is encoded as:
 
 | ordering  | encoding |
 |-----------|----------|
@@ -779,9 +756,7 @@ encode the ordering and the high four bits must be 0.
 | `acqrel`  | `0b0001` |
 
 Reads with the `acqrel` ordering are acquire reads and writes with the `acqrel` ordering are release
-writes. Fences with the `acqrel` ordering are full acquire-release fences.
-
-> Note: We may want to add separate `acquire` and `release` orderings to express weaker fences.
+writes.
 
 RMW operations take two ordering immediates, but these immediates must match, i.e. an RMW op can
 only have two `seqcst` orderings or two `acqrel` orderings. This restriction may be relaxed in the
@@ -791,9 +766,7 @@ future.
 > to give its read different orderings depending on whether it succeeds or fails.
 
 The new instructions below do not have memarg immediates because they do not operate on memories, so
-they unconditionally take `u8` ordering immediates. `atomic.fence` already has a reserved zero byte
-immediate, which we now interpret as a `u8` ordering immediate, allowing us to express fences with
-different orderings as well.
+they unconditionally take `u8` ordering immediates.
 
 #### Types
 
@@ -853,7 +826,6 @@ In addition, the following instructions are introduced:
 
 | Instructions | opcode | notes |
 | ------------ | ------ | ----- |
-| `pause` | 0xFE 0x04 | |
 | `global.atomic.get <u8:ordering> <globalidx>` | 0xFE 0x4F | valid for i32, i64, and <: anyref globals. |
 | `global.atomic.set <u8:ordering> <globalidx>` | 0xFE 0x50 | valid for i32, i64, and <: anyref globals. |
 | `global.atomic.rmw.add <u8:ordering> <globalidx>` | 0xFE 0x51 | valid for i32 and i64 globals. |
@@ -1037,3 +1009,4 @@ validation constraints on shared functions are intended to be future-compatible 
 continuation references.
 
 [stack-switching]: https://github.com/WebAssembly/stack-switching
+[Relaxed Atomics]: https://github.com/WebAssembly/relaxed-atomics

@@ -251,6 +251,6 @@ Thanks to Jukka Jylänki for his persistence in raising these issues and advocat
 These issues were first considered by Lars Hansen [over a decade ago](https://github.com/tc39/proposal-ecmascript-sharedmem/blob/main/issues/FutexWaitOnMainThread.md).
 
 This proposal is motivated by other ongoing work on adding more general and efficient [wait and notify primitives](https://github.com/WebAssembly/shared-everything-threads/blob/main/proposals/shared-everything-threads/Overview.md#managed-waiter-queues) to WebAssembly.
-Thanks to Shu-Yu Guo for first suggesting new work in this area.
+Thanks to Shu-Yu Guo for first suggesting new work in this area (while he was at Google).
 
 Thanks to Jeffrey Yasskin for early feedback on this explainer.

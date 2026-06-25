@@ -454,6 +454,7 @@ only `(ref (shared waitqueue))`.
 We introduce the following new instructions:
 
 `waitqueue.new` allocates a new waitqueues.
+`waitqueue.new` is a constant expression, so it can be used in e.g. global initializers.
 ```
 C |- waitqueue.new : [] -> [(ref (shared waitqueue))]
 ```

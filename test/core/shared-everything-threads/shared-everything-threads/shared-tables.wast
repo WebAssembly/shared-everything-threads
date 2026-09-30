@@ -62,10 +62,10 @@
   (table $b shared 1 (ref null (shared eq)))
   (func (export "table-atomic-get-eq-seq_cst-$a") (param $x i32) (result (ref null (shared eq)))
     local.get $x
-    table.atomic.get seq_cst $a)
+    table.atomic.get seqcst $a)
   (func (export "table-atomic-get-eq-seq_cst-$b") (param $x i32) (result (ref null (shared eq)))
     local.get $x
-    table.atomic.get seq_cst $b)
+    table.atomic.get seqcst $b)
   (func (export "table-atomic-get-eq-acq_rel-$a") (param $x i32) (result (ref null (shared eq)))
     local.get $x
     table.atomic.get acq_rel $a)
@@ -75,11 +75,11 @@
   (func (export "table-atomic-set-eq-seq_cst-$a") (param $x i32) (param $y (ref null (shared eq)))
     local.get $x
     local.get $y
-    table.atomic.set seq_cst $a)
+    table.atomic.set seqcst $a)
   (func (export "table-atomic-set-eq-seq_cst-$b") (param $x i32) (param $y (ref null (shared eq)))
     local.get $x
     local.get $y
-    table.atomic.set seq_cst $b)
+    table.atomic.set seqcst $b)
   (func (export "table-atomic-set-eq-acq_rel-$a") (param $x i32) (param $y (ref null (shared eq)))
     local.get $x
     local.get $y
@@ -91,11 +91,11 @@
   (func (export "table-atomic-rmw.xchg-eq-seq_cst-$a") (param $x i32) (param $y (ref null (shared eq))) (result (ref null (shared eq)))
     local.get $x
     local.get $y
-    table.atomic.rmw.xchg seq_cst $a)
+    table.atomic.rmw.xchg seqcst $a)
   (func (export "table-atomic-rmw.xchg-eq-seq_cst-$b") (param $x i32) (param $y (ref null (shared eq))) (result (ref null (shared eq)))
     local.get $x
     local.get $y
-    table.atomic.rmw.xchg seq_cst $b)
+    table.atomic.rmw.xchg seqcst $b)
   (func (export "table-atomic-rmw.xchg-eq-acq_rel-$a") (param $x i32) (param $y (ref null (shared eq))) (result (ref null (shared eq)))
     local.get $x
     local.get $y
@@ -108,12 +108,12 @@
     local.get $x
     local.get $y
     local.get $z
-    table.atomic.rmw.cmpxchg seq_cst $a)
+    table.atomic.rmw.cmpxchg seqcst $a)
   (func (export "table-atomic-rmw.cmpxchg-eq-seq_cst-$b") (param $x i32) (param $y (ref null (shared eq))) (param $z (ref null (shared eq))) (result (ref null (shared eq)))
     local.get $x
     local.get $y
     local.get $z
-    table.atomic.rmw.cmpxchg seq_cst $b)
+    table.atomic.rmw.cmpxchg seqcst $b)
   (func (export "table-atomic-rmw.cmpxchg-eq-acq_rel-$a") (param $x i32) (param $y (ref null (shared eq))) (param $z (ref null (shared eq))) (result (ref null (shared eq)))
     local.get $x
     local.get $y
@@ -131,10 +131,10 @@
   (table $b shared 1 (ref null (shared any)))
   (func (export "table-atomic-get-any-seq_cst-$a") (param $x i32) (result (ref null (shared any)))
     local.get $x
-    table.atomic.get seq_cst $a)
+    table.atomic.get seqcst $a)
   (func (export "table-atomic-get-any-seq_cst-$b") (param $x i32) (result (ref null (shared any)))
     local.get $x
-    table.atomic.get seq_cst $b)
+    table.atomic.get seqcst $b)
   (func (export "table-atomic-get-any-acq_rel-$a") (param $x i32) (result (ref null (shared any)))
     local.get $x
     table.atomic.get acq_rel $a)
@@ -144,11 +144,11 @@
   (func (export "table-atomic-set-any-seq_cst-$a") (param $x i32) (param $y (ref null (shared any)))
     local.get $x
     local.get $y
-    table.atomic.set seq_cst $a)
+    table.atomic.set seqcst $a)
   (func (export "table-atomic-set-any-seq_cst-$b") (param $x i32) (param $y (ref null (shared any)))
     local.get $x
     local.get $y
-    table.atomic.set seq_cst $b)
+    table.atomic.set seqcst $b)
   (func (export "table-atomic-set-any-acq_rel-$a") (param $x i32) (param $y (ref null (shared any)))
     local.get $x
     local.get $y
@@ -160,11 +160,11 @@
   (func (export "table-atomic-rmw.xchg-any-seq_cst-$a") (param $x i32) (param $y (ref null (shared any))) (result (ref null (shared any)))
     local.get $x
     local.get $y
-    table.atomic.rmw.xchg seq_cst $a)
+    table.atomic.rmw.xchg seqcst $a)
   (func (export "table-atomic-rmw.xchg-any-seq_cst-$b") (param $x i32) (param $y (ref null (shared any))) (result (ref null (shared any)))
     local.get $x
     local.get $y
-    table.atomic.rmw.xchg seq_cst $b)
+    table.atomic.rmw.xchg seqcst $b)
   (func (export "table-atomic-rmw.xchg-any-acq_rel-$a") (param $x i32) (param $y (ref null (shared any))) (result (ref null (shared any)))
     local.get $x
     local.get $y
@@ -184,7 +184,7 @@
       local.get $x
       local.get $y
       local.get $z
-      table.atomic.rmw.cmpxchg seq_cst $a))
+      table.atomic.rmw.cmpxchg seqcst $a))
   "invalid type")
 
 (assert_invalid
@@ -192,7 +192,7 @@
     (table 1 funcref)
     (func
       i32.const 0
-      table.atomic.get seq_cst 0
+      table.atomic.get seqcst 0
     )
   )
   "invalid type: `table.atomic.get` only allows subtypes of `anyref`")
@@ -203,7 +203,7 @@
     (func
       i32.const 0
       ref.null func
-      table.atomic.set seq_cst 0
+      table.atomic.set seqcst 0
     )
   )
   "invalid type: `table.atomic.set` only allows subtypes of `anyref`")
@@ -214,7 +214,7 @@
     (func
       i32.const 0
       ref.null func
-      table.atomic.rmw.xchg seq_cst 0
+      table.atomic.rmw.xchg seqcst 0
     )
   )
   "invalid type: `table.atomic.rmw.xchg` only allows subtypes of `anyref`")
